@@ -1060,7 +1060,7 @@ export const RosterManager: React.FC = () => {
                            </button>
                        )}
                        
-                       {selectedRoster.type === 'cat_adm' && (
+                       {(selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_ast') && (
                          <label className="flex items-center space-x-2 cursor-pointer group">
                             <div 
                               onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
@@ -1281,6 +1281,18 @@ export const RosterManager: React.FC = () => {
                            >
                               <Wand2 size={12}/> <span>Gerar Escala Automática</span>
                            </button>
+                       )}
+
+                       {selectedRoster.type === 'cat_psi' && (
+                         <label className="flex items-center space-x-2 cursor-pointer group mr-4">
+                            <div 
+                              onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hideWeekends ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
+                            >
+                               {selectedRoster.hideWeekends && <Check size={10} />}
+                            </div>
+                            <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Finais de Semana</span>
+                         </label>
                        )}
 
                        <button onClick={addSection} className="flex items-center space-x-1 text-[8pt] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 uppercase">
