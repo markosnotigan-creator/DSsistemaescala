@@ -38,3 +38,46 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
+@media print {
+  @page {
+    margin: 0;
+  }
+  
+  html, body {
+    background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* Force black text for all elements during print */
+  * {
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Ensure background colors are printed for specific roster elements */
+  /* We use !important to override the dark mode styles if they are active */
+  .bg-pm-50, .bg-gray-50, .bg-[#e4e9d6], .bg-[#cbd5b0], .bg-[#e6e6e6], .bg-gov-green, .bg-pm-700 {
+    background-color: inherit !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Specific overrides for roster headers to ensure they print with color */
+  th.bg-[#cbd5b0], th.bg-[#e4e9d6], td.bg-[#cbd5b0], td.bg-[#e4e9d6], tr.bg-[#cbd5b0] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure the period badge we just changed to border-black is readable */
+  .border-black {
+    border-color: black !important;
+  }
+}

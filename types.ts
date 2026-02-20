@@ -140,6 +140,7 @@ export interface Roster {
   isPublished: boolean;
   sections?: RosterSection[];
   customHeaders?: string[]; // Para renomear colunas na escala extra
+  hideWeekends?: boolean; // Ocultar sábados e domingos
 }
 
 export interface AppSettings {

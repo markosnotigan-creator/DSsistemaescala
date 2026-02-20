@@ -765,7 +765,14 @@ export const RosterManager: React.FC = () => {
     const dates = [];
     let curr = new Date(selectedRoster.startDate + 'T12:00:00');
     const end = new Date(selectedRoster.endDate + 'T12:00:00');
-    while(curr <= end) { dates.push(new Date(curr)); curr.setDate(curr.getDate() + 1); }
+    while(curr <= end) { 
+      const day = curr.getDay();
+      const isWeekend = day === 0 || day === 6;
+      if (!selectedRoster.hideWeekends || !isWeekend) {
+        dates.push(new Date(curr)); 
+      }
+      curr.setDate(curr.getDate() + 1); 
+    }
     return dates;
   };
 
@@ -905,11 +912,11 @@ export const RosterManager: React.FC = () => {
              <div className="w-[210mm] min-h-[297mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '20mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                  {/* ... conteúdo da folha A4 ... (Mantendo text-black e bg-white explícitos para garantir) */}
                  <header className="flex justify-between items-start mb-6 h-24 relative w-full border-b border-transparent hover:border-blue-200 transition-colors group">
-                    {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="h-20 w-auto object-contain" alt="PMCE" />}
+                    {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-20 w-auto object-contain" alt="PMCE" />}
                     <div className="flex-1 text-center self-center px-4">
                        <span className="text-gray-300 text-[10px] uppercase font-bold opacity-0 group-hover:opacity-100">Logos e Cabeçalho (Automático)</span>
                     </div>
-                    {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="h-20 w-auto object-contain" alt="Gov" />}
+                    {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="h-20 w-auto object-contain" alt="Gov" />}
                  </header>
 
                  <div className="text-center mb-6 relative group">
@@ -1021,7 +1028,7 @@ export const RosterManager: React.FC = () => {
              {/* ESCALA GENÉRICA (A4 PAISAGEM) - Mantém BG White e Text Black */}
              <div className="w-[297mm] min-h-[210mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                 <header className="text-center mb-2 flex flex-col justify-center border-b border-black/20 pb-1 relative h-12">
-                   {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
+                   {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
                    <div className="mx-16">
                      <input
                        readOnly={!isAdmin}
@@ -1038,12 +1045,12 @@ export const RosterManager: React.FC = () => {
                      />
                      <div className="text-[9pt] font-bold uppercase text-black">DO DIA {new Date(selectedRoster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(selectedRoster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
                    </div>
-                   {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
+                   {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                 </header>
 
                 <div className="flex-1 border border-black overflow-hidden relative">
                   {isAdmin && (
-                    <div className="bg-gray-100 border-b border-black p-1 flex justify-end space-x-2 no-print">
+                    <div className="bg-gray-100 border-b border-black p-1 flex justify-end items-center space-x-4 no-print px-3">
                        {(selectedRoster.type !== 'cat_extra') && (
                            <button 
                              onClick={() => setIsAutoModalOpen(true)}
@@ -1051,6 +1058,18 @@ export const RosterManager: React.FC = () => {
                            >
                               <Wand2 size={12}/> <span>Gerar Escala Automática</span>
                            </button>
+                       )}
+                       
+                       {selectedRoster.type === 'cat_adm' && (
+                         <label className="flex items-center space-x-2 cursor-pointer group">
+                            <div 
+                              onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hideWeekends ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
+                            >
+                               {selectedRoster.hideWeekends && <Check size={10} />}
+                            </div>
+                            <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Finais de Semana</span>
+                         </label>
                        )}
                     </div>
                   )}
@@ -1220,7 +1239,7 @@ export const RosterManager: React.FC = () => {
              {/* LAYOUT OPERACIONAL (AMB/PSI) - Mantém BG White e Text Black */}
              <div className="w-[210mm] min-h-[297mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '8mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                 <header className="text-center mb-4 relative">
-                   {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
+                   {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                    <div className="mx-20">
                      <input
                        readOnly={!isAdmin}
@@ -1239,7 +1258,7 @@ export const RosterManager: React.FC = () => {
                          DO DIA {new Date(selectedRoster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(selectedRoster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                       </div>
                    </div>
-                   {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
+                   {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
                 </header>
 
                 <div className="bg-[#cbd5b0] border-2 border-black border-b-0 p-1 text-center">
@@ -1604,6 +1623,13 @@ export const RosterManager: React.FC = () => {
               </div>
            </div>
         </div>
+      )}
+
+      {showPrint && selectedRoster && (
+        <PrintPreview 
+          roster={selectedRoster} 
+          onClose={() => setShowPrint(false)} 
+        />
       )}
     </div>
   );

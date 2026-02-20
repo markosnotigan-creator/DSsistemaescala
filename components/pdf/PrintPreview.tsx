@@ -135,10 +135,20 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   };
 
   // GERAÇÃO DAS DATAS
-  const dates = [];
-  let curr = new Date(roster.startDate + 'T12:00:00');
-  const end = new Date(roster.endDate + 'T12:00:00');
-  while(curr <= end) { dates.push(new Date(curr)); curr.setDate(curr.getDate() + 1); }
+  const dates = useMemo(() => {
+    const d = [];
+    let curr = new Date(roster.startDate + 'T12:00:00');
+    const end = new Date(roster.endDate + 'T12:00:00');
+    while(curr <= end) { 
+      const day = curr.getDay();
+      const isWeekend = day === 0 || day === 6;
+      if (!roster.hideWeekends || !isWeekend) {
+        d.push(new Date(curr)); 
+      }
+      curr.setDate(curr.getDate() + 1); 
+    }
+    return d;
+  }, [roster.startDate, roster.endDate, roster.hideWeekends]);
 
   const creationDateFormatted = roster.creationDate 
     ? new Date(roster.creationDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -175,6 +185,21 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   return (
     <div className="fixed inset-0 bg-gray-900/95 z-50 overflow-hidden no-print flex flex-col backdrop-blur-sm animate-in fade-in duration-200">
       <style>{`
+        #roster-pdf-content { 
+          color: black !important;
+          background-color: white !important;
+        }
+        #roster-pdf-content * {
+          color: black !important;
+          border-color: black !important;
+        }
+        #roster-pdf-content .bg-[#cbd5b0], 
+        #roster-pdf-content .bg-[#e4e9d6], 
+        #roster-pdf-content .bg-[#e6e6e6] {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
         @media print {
           @page { 
             size: ${orientation} A4; 
@@ -183,7 +208,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           body { 
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
-            background: white; 
+            background: white !important; 
+            color: black !important;
             margin: 0; 
             padding: 0;
           }
@@ -242,9 +268,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '15mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
                 <div className="h-full flex flex-col">
                     <header className="flex justify-between items-start mb-4 h-16 relative w-full flex-shrink-0">
-                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="h-16 w-auto object-contain" alt="PMCE" />}
+                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}
                         <div className="flex-1"></div>
-                        {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="h-16 w-auto object-contain" alt="Gov" />}
+                        {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="Gov" />}
                     </header>
                     <div className="text-center mb-2 flex-shrink-0">
                         <h1 className="text-[14pt] font-bold uppercase leading-tight">{roster.title}</h1>
@@ -291,7 +317,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
                <div className="h-full flex flex-col">
                   <header className="text-center mb-2 flex flex-col justify-center border-b border-black/20 pb-1 relative h-12 flex-shrink-0">
-                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
+                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
                      <div className="mx-16">
                        {/* TÍTULO DA ORGANIZAÇÃO (AGORA PERSONALIZÁVEL) */}
                        <h1 className="text-[10pt] font-bold uppercase tracking-wide text-gray-800">
@@ -300,7 +326,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        <h2 className="text-[12pt] font-black uppercase tracking-tight leading-tight">{roster.title}</h2>
                        <div className="text-[8pt] font-bold uppercase">DO DIA {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
                      </div>
-                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
+                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                   </header>
                   <div className="flex-1 border border-black overflow-hidden relative">
                     <table className="w-full h-full border-collapse text-[8pt] table-fixed">
@@ -370,18 +396,18 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
                 <div className="h-full flex flex-col">
                     <header className="text-center mb-1 relative h-12 flex items-center justify-center flex-shrink-0">
-                       {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
+                       {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
                        <div className="mx-14 w-full">
                          {/* TÍTULO EDITÁVEL DA ORGANIZAÇÃO (AMBULÂNCIA/PSICOLOGIA) */}
                          <h1 className="text-[8pt] font-bold uppercase tracking-tight leading-none mb-1">
                             {roster.headerTitle || settings.orgName}
                          </h1>
                          <h2 className="text-[10pt] font-black uppercase leading-none mb-1">{roster.title}</h2>
-                         <div className="text-[7pt] font-bold uppercase bg-black text-white inline-block px-2 rounded-sm leading-tight">
+                         <div className="text-[7pt] font-bold uppercase border border-black text-black inline-block px-2 rounded-sm leading-tight">
                              PERÍODO: {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
                        </div>
-                       {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
+                       {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                     </header>
                     {roster.subTitle && (
                         <div className="bg-[#cbd5b0] border border-black border-b-0 p-0.5 text-center font-bold text-[7pt] uppercase mb-0 flex-shrink-0">
