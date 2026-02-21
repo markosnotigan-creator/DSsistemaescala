@@ -15,9 +15,9 @@ import {
   Clock,
   Briefcase
 } from 'lucide-react';
-import { Rank, Role, Status, Soldier, Roster, Shift } from '../types';
+import { Rank, Role, Status, Soldier, Roster, Shift, BankTransaction } from '../types';
 
-type ReportType = 'personnel' | 'shifts' | 'absences' | 'extra_duty';
+type ReportType = 'personnel' | 'shifts' | 'absences' | 'extra_duty' | 'bank';
 
 export const Reports: React.FC = () => {
   const [activeReport, setActiveReport] = useState<ReportType>('personnel');
@@ -136,6 +136,13 @@ export const Reports: React.FC = () => {
             <TrendingUp size={20} />
             <span className="font-bold uppercase text-xs">Escalas Extras</span>
           </button>
+          <button 
+            onClick={() => setActiveReport('bank')}
+            className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-all ${activeReport === 'bank' ? 'border-pm-600 bg-pm-50 dark:bg-pm-900/20 text-pm-900 dark:text-white' : 'border-gray-100 dark:border-slate-800 hover:border-pm-200 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Briefcase size={20} />
+            <span className="font-bold uppercase text-xs">Banco de Folgas</span>
+          </button>
         </div>
       </div>
 
@@ -196,7 +203,8 @@ export const Reports: React.FC = () => {
                     <p className="text-xs font-bold text-gray-500 uppercase">Relatório de {
                       activeReport === 'personnel' ? 'Efetivo Geral' : 
                       activeReport === 'shifts' ? 'Produtividade de Plantões' : 
-                      activeReport === 'absences' ? 'Afastamentos e LTS' : 'Escalas Extras'
+                      activeReport === 'absences' ? 'Afastamentos e LTS' : 
+                      activeReport === 'bank' ? 'Banco de Folgas' : 'Escalas Extras'
                     }</p>
                  </div>
               </div>
@@ -395,6 +403,60 @@ export const Reports: React.FC = () => {
                       <td className="p-3 text-[10px] font-bold text-gray-400 dark:text-gray-500">{new Date(h.date).toLocaleString()}</td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {activeReport === 'bank' && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-end mb-4">
+                <h4 className="text-lg font-black text-pm-900 dark:text-white uppercase tracking-tighter">Banco de Folgas (Saldos e Gozos)</h4>
+                <span className="text-xs font-bold text-gray-500 uppercase">Total: {filteredSoldiers.length} Militares</span>
+              </div>
+
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-slate-800/50 border-b dark:border-slate-800">
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Militar</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400 text-center">Adquiridas</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400 text-center">Gozadas</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400 text-center">Saldo Atual</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Último Evento</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-800">
+                  {filteredSoldiers.map(s => {
+                    const history = s.bankHistory || [];
+                    const credits = history.filter(t => t.type === 'CREDIT').reduce((acc, curr) => acc + (curr.amount || 1), 0);
+                    const debits = history.filter(t => t.type === 'DEBIT').reduce((acc, curr) => acc + (curr.amount || 1), 0);
+                    const balance = credits - debits;
+                    const lastEvent = history.length > 0 ? [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null;
+
+                    return (
+                      <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3">
+                          <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{s.rank}</div>
+                          <div className="text-xs font-black text-pm-900 dark:text-white uppercase">{s.name}</div>
+                        </td>
+                        <td className="p-3 text-center text-sm font-bold text-green-600">{credits}</td>
+                        <td className="p-3 text-center text-sm font-bold text-red-600">{debits}</td>
+                        <td className="p-3 text-center">
+                          <span className={`text-sm font-black px-3 py-1 rounded-lg ${balance > 0 ? 'bg-green-100 text-green-700' : balance < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {balance}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {lastEvent ? (
+                            <div className="text-[10px] leading-tight">
+                              <span className="font-bold block uppercase">{lastEvent.type === 'CREDIT' ? 'Aquisição' : 'Gozo'}</span>
+                              <span className="text-gray-500">{new Date(lastEvent.date).toLocaleDateString()} - {lastEvent.description}</span>
+                            </div>
+                          ) : <span className="text-[10px] text-gray-400">Sem registros</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -64,9 +64,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
   );
 
   return (
-    <div className="flex h-screen bg-slate-100 dark:bg-slate-900 overflow-hidden no-print transition-colors duration-200">
+    <div className="flex h-screen bg-slate-100 dark:bg-slate-900 overflow-hidden transition-colors duration-200">
       {/* Sidebar */}
-      <aside className="w-64 bg-pm-900 dark:bg-slate-950 text-white flex flex-col shadow-2xl z-20 transition-colors duration-200">
+      <aside className="w-64 bg-pm-900 dark:bg-slate-950 text-white flex flex-col shadow-2xl z-20 transition-colors duration-200 no-print">
         <div className="p-6 flex items-center space-x-3 border-b border-pm-700 dark:border-slate-800 bg-pm-950/30">
           <div className="bg-gov-yellow p-1.5 rounded-lg">
             <ShieldAlert className="text-pm-900" size={28} />
@@ -118,7 +118,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white dark:bg-slate-800 shadow-sm h-16 flex items-center px-6 justify-between z-10 border-b border-gray-200 dark:border-slate-700 transition-colors duration-200">
+        <header className="bg-white dark:bg-slate-800 shadow-sm h-16 flex items-center px-6 justify-between z-10 border-b border-gray-200 dark:border-slate-700 transition-colors duration-200 no-print">
           <h2 className="text-xl font-black text-pm-900 dark:text-white uppercase tracking-tight">
             {activePage === 'dashboard' && 'Visão Geral do Efetivo'}
             {activePage === 'personnel' && 'Cadastro de Militares'}
