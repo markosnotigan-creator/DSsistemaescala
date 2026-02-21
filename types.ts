@@ -141,6 +141,7 @@ export interface Roster {
   sections?: RosterSection[];
   customHeaders?: string[]; // Para renomear colunas na escala extra
   hideWeekends?: boolean; // Ocultar sábados e domingos
+  mergeWeekendRows?: boolean; // Mesclar linhas nos finais de semana
 }
 
 export interface AppSettings {

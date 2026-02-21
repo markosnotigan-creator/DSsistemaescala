@@ -1283,6 +1283,18 @@ export const RosterManager: React.FC = () => {
                            </button>
                        )}
 
+                       {(selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_ast') && (
+                         <label className="flex items-center space-x-2 cursor-pointer group mr-4">
+                            <div 
+                              onClick={() => updateRoster({...selectedRoster, mergeWeekendRows: !selectedRoster.mergeWeekendRows})}
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.mergeWeekendRows ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400 group-hover:border-blue-500'}`}
+                            >
+                               {selectedRoster.mergeWeekendRows && <Check size={10} />}
+                            </div>
+                            <span className="text-[8pt] font-black text-pm-900 uppercase">Mesclar Finais de Semana</span>
+                         </label>
+                       )}
+
                        {selectedRoster.type === 'cat_psi' && (
                          <label className="flex items-center space-x-2 cursor-pointer group mr-4">
                             <div 
@@ -1357,7 +1369,13 @@ export const RosterManager: React.FC = () => {
                                 <tr key={row.id}>
                                    {dates.map((d, dIdx) => {
                                       const dStr = d.toISOString().split('T')[0];
-                                      const shift = selectedRoster.shifts.find(s => s.date === dStr && s.period === row.id);
+                                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                                      const isMerged = selectedRoster.mergeWeekendRows && isWeekend;
+                                      
+                                      if (isMerged && rIdx > 0) return null;
+
+                                      const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
+                                      const shift = selectedRoster.shifts.find(s => s.date === dStr && s.period === cellPeriodId);
                                       const sdr = shift ? soldiers.find(s => s.id === shift.soldierId) : null;
                                       const shiftId = shift ? `${shift.date}-${shift.period}-${shift.soldierId}` : '';
                                       const legend = shift?.note || "";
@@ -1365,8 +1383,9 @@ export const RosterManager: React.FC = () => {
                                       return (
                                         <td 
                                           key={`${row.id}-${dStr}`} 
+                                          rowSpan={isMerged ? sec.rows.length : 1}
                                           className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} align-middle h-[45px]`}
-                                          onClick={() => { if(isAdmin && !sdr) { setActiveSearchCell({date: dStr, period: row.id}); setIsSearchOpen(true); } }}
+                                          onClick={() => { if(isAdmin && !sdr) { setActiveSearchCell({date: dStr, period: cellPeriodId}); setIsSearchOpen(true); } }}
                                         >
                                            <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden leading-tight">
                                              {sdr ? (

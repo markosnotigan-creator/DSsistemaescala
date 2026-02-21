@@ -48,10 +48,10 @@ function App() {
     }
   };
 
-  const handleLogin = (role: 'ADMIN' | 'USER') => {
+  const handleLogin = async (role: 'ADMIN' | 'USER') => {
     if (role === 'ADMIN') {
-      const storedPwd = db.getAdminPassword();
-      if (password === storedPwd) {
+      const isValid = await db.verifyAdminPassword(password);
+      if (isValid) {
         db.login(role);
         setIsAuthenticated(true);
       } else {
@@ -70,18 +70,16 @@ function App() {
   };
 
   const handleRecoverWhatsApp = () => {
-    const pwd = db.getAdminPassword();
     const phone = "5585988504361";
-    const message = `SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA\n\nOlá, esqueci a senha do sistema Escalas DS.\n\nSISTEMA: A senha recuperada do banco de dados local é: *${pwd}*`;
+    const message = `SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA\n\nOlá, esqueci a senha do sistema Escalas DS.\n\nPor favor, entre em contato para realizar o reset da senha administrativa.`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
   const handleRecoverEmail = () => {
-    const pwd = db.getAdminPassword();
     const email = "marcos_notigan@hotmail.com";
     const subject = "Recuperação de Senha - Escalas DS";
-    const body = `Olá,\n\nEstou solicitando a recuperação da senha administrativa.\n\nA senha atual registrada no sistema é: ${pwd}`;
+    const body = `Olá,\n\nEstou solicitando a recuperação da senha administrativa do sistema Escalas DS.\n\nPor favor, informe os procedimentos para reset de senha.`;
     const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = url;
   };

@@ -271,14 +271,35 @@ class StoreService {
     this.setLocal('current_user', { username: role === 'ADMIN' ? 'Administrador' : 'Visualizador', role });
   }
   
-  // --- GERENCIAMENTO DE SENHA ---
-  getAdminPassword(): string {
-    const pwd = localStorage.getItem('admin_password');
-    return pwd || '123456';
+  // --- GERENCIAMENTO DE SENHA SEGURO ---
+  private async hashPassword(password: string): Promise<string> {
+    const msgUint8 = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  setAdminPassword(newPassword: string): void {
-    localStorage.setItem('admin_password', newPassword);
+  async verifyAdminPassword(input: string): Promise<boolean> {
+    const stored = localStorage.getItem('admin_password') || '123456';
+    const hashedInput = await this.hashPassword(input);
+    
+    // Se o que está guardado tem 64 caracteres, assumimos que é um hash SHA-256
+    if (stored.length === 64) {
+      return stored === hashedInput;
+    } else {
+      // Caso de migração: se a senha guardada for texto puro (ex: '123456')
+      if (stored === input) {
+        // Migra automaticamente para o formato seguro (hash)
+        await this.updateAdminPassword(input);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  async updateAdminPassword(newPassword: string): Promise<void> {
+    const hashed = await this.hashPassword(newPassword);
+    localStorage.setItem('admin_password', hashed);
   }
 
   // --- DEBUG / TEST ---

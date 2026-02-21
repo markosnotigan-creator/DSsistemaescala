@@ -84,7 +84,7 @@ export const Settings: React.FC = () => {
     setEditingCatId(null);
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     setPwdStatus({ msg: '', type: '' });
     
     // Validações
@@ -93,8 +93,8 @@ export const Settings: React.FC = () => {
       return;
     }
     
-    const storedPwd = db.getAdminPassword();
-    if (pwdData.current !== storedPwd) {
+    const isValid = await db.verifyAdminPassword(pwdData.current);
+    if (!isValid) {
       setPwdStatus({ msg: 'A senha atual está incorreta.', type: 'error' });
       return;
     }
@@ -110,7 +110,7 @@ export const Settings: React.FC = () => {
     }
 
     // Salvar
-    db.setAdminPassword(pwdData.new);
+    await db.updateAdminPassword(pwdData.new);
     setPwdStatus({ msg: 'Senha administrativa alterada com sucesso!', type: 'success' });
     setPwdData({ current: '', new: '', confirm: '' });
   };

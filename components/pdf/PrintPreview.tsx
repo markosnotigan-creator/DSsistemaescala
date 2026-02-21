@@ -403,7 +403,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             {roster.headerTitle || settings.orgName}
                          </h1>
                          <h2 className="text-[10pt] font-black uppercase leading-none mb-1">{roster.title}</h2>
-                         <div className="text-[7pt] font-bold uppercase border border-black text-black inline-block px-2 rounded-sm leading-tight">
+                         <div className="text-[7pt] font-bold uppercase text-black leading-tight">
                              PERÍODO: {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
                        </div>
@@ -434,15 +434,25 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                          {sec.title}
                                       </td>
                                    </tr>
-                                   {sec.rows.map((row) => (
+                                   {sec.rows.map((row, rIdx) => (
                                       <tr key={row.id}>
                                          {dates.map((d) => {
                                             const dStr = d.toISOString().split('T')[0];
-                                            const shift = roster.shifts.find(s => s.date === dStr && s.period === row.id);
+                                            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                                            const isMerged = roster.mergeWeekendRows && isWeekend;
+                                            
+                                            if (isMerged && rIdx > 0) return null;
+
+                                            const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
+                                            const shift = roster.shifts.find(s => s.date === dStr && s.period === cellPeriodId);
                                             const sdr = shift ? allSoldiers.find(s => s.id === shift.soldierId) : null;
                                             const legend = shift?.note || '';
                                             return (
-                                              <td key={`${row.id}-${dStr}`} className="border border-black p-0 text-center align-middle h-auto">
+                                              <td 
+                                                key={`${row.id}-${dStr}`} 
+                                                rowSpan={isMerged ? sec.rows.length : 1}
+                                                className="border border-black p-0 text-center align-middle h-auto"
+                                              >
                                                  {sdr ? (
                                                     <div className="flex flex-col items-center justify-center w-full h-full leading-none px-0.5 py-0.5">
                                                        <div className="text-[8.5pt] font-bold uppercase text-center w-full break-words tracking-tight leading-tight">
