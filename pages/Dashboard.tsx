@@ -540,6 +540,20 @@ export const Dashboard: React.FC = () => {
              <p className="text-4xl font-black text-pm-900 dark:text-white">{awayCount}</p>
           </div>
         </div>
+
+        {/* Card Novo: Relatórios */}
+        <button 
+           onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'reports' }))}
+           className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center space-x-4 hover:shadow-xl hover:border-pm-600 dark:hover:border-pm-400 transition-all group relative overflow-hidden text-left min-h-[140px]"
+        >
+          <div className="absolute right-0 top-0 w-24 h-24 bg-pm-50 dark:bg-pm-900/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+          <div className="p-4 rounded-xl bg-pm-700 text-white shadow-pm-200 dark:shadow-none shadow-lg relative z-10"><FileText size={32}/></div>
+          <div className="relative z-10">
+             <p className="text-gray-400 text-sm font-bold uppercase tracking-wider">Estatísticas</p>
+             <p className="text-2xl font-black text-pm-900 dark:text-white leading-none mt-1">RELATÓRIOS</p>
+             <p className="text-xs text-pm-700 dark:text-pm-300 font-bold mt-2 bg-pm-50 dark:bg-pm-900/30 px-3 py-1 rounded-full inline-block group-hover:bg-pm-100 dark:group-hover:bg-pm-800/50">GERAR DOCUMENTOS</p>
+          </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

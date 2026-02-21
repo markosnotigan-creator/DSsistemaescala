@@ -4,6 +4,7 @@ import { Layout } from './components/ui/Layout.tsx';
 import { Dashboard } from './pages/Dashboard';
 import { Personnel } from './pages/Personnel';
 import { RosterManager } from './pages/RosterManager';
+import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { db } from './services/store';
 import { Lock, ArrowLeft, ShieldCheck, Eye, EyeOff, KeyRound, Mail, Phone, HelpCircle, X, Moon, Sun } from 'lucide-react';
@@ -34,6 +35,13 @@ function App() {
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
     }
+
+    // Listener para navegação via eventos customizados
+    const handleNavigate = (e: any) => {
+      if (e.detail) setActivePage(e.detail);
+    };
+    window.addEventListener('navigate', handleNavigate);
+    return () => window.removeEventListener('navigate', handleNavigate);
   }, []);
 
   const toggleTheme = () => {
@@ -233,6 +241,7 @@ function App() {
       {activePage === 'dashboard' && <Dashboard />}
       {activePage === 'personnel' && <Personnel />}
       {activePage === 'rosters' && <RosterManager />}
+      {activePage === 'reports' && <Reports />}
       {activePage === 'settings' && <Settings />}
     </Layout>
   );

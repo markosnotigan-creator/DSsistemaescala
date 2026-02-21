@@ -9,7 +9,8 @@ import {
   LayoutDashboard,
   Download,
   Moon,
-  Sun
+  Sun,
+  FileText
 } from 'lucide-react';
 import { db } from '../../services/store';
 
@@ -80,6 +81,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
           <NavItem id="dashboard" icon={LayoutDashboard} label="Painel Principal" />
           <NavItem id="rosters" icon={Scale} label="Gerenciar Escalas" />
           <NavItem id="personnel" icon={Users} label="Efetivo (Militares)" />
+          <NavItem id="reports" icon={FileText} label="Relatórios" />
           {isAdmin && <NavItem id="settings" icon={Settings} label="Configurações" />}
         </nav>
 
@@ -121,6 +123,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate
             {activePage === 'dashboard' && 'Visão Geral do Efetivo'}
             {activePage === 'personnel' && 'Cadastro de Militares'}
             {activePage === 'rosters' && 'Gerenciamento de Escalas'}
+            {activePage === 'reports' && 'Relatórios e Estatísticas'}
             {activePage === 'settings' && 'Configurações do Sistema'}
           </h2>
           
