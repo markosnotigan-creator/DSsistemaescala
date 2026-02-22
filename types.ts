@@ -167,9 +167,16 @@ export interface TeamMapping {
   shiftName: string;
 }
 
-export type UserRole = 'ADMIN' | 'USER';
+export type UserRole = 'admin' | 'operador' | 'visualizador';
+
+export interface Profile {
+  id: string;
+  role: UserRole;
+  full_name?: string;
+}
 
 export interface User {
-  username: string;
-  role: UserRole;
+  id: string;
+  email?: string;
+  profile?: Profile;
 }
