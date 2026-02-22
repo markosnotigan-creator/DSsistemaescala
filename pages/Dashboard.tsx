@@ -77,7 +77,8 @@ export const Dashboard: React.FC = () => {
     type: 'CREDIT' as 'CREDIT' | 'DEBIT',
     date: new Date().toISOString().split('T')[0],
     description: '',
-    amount: 1
+    amount: 1,
+    relatedTransactionId: ''
   });
 
   useEffect(() => {
@@ -207,7 +208,8 @@ export const Dashboard: React.FC = () => {
       date: bankForm.date,
       description: bankForm.description,
       amount: bankForm.amount,
-      recordedAt: new Date().toISOString()
+      recordedAt: new Date().toISOString(),
+      relatedTransactionId: bankForm.type === 'DEBIT' ? bankForm.relatedTransactionId : undefined
     };
 
     const updatedHistory = [...(selectedSoldierForBank.bankHistory || []), newTransaction];
@@ -215,7 +217,7 @@ export const Dashboard: React.FC = () => {
     
     db.saveSoldier(updatedSoldier);
     setSelectedSoldierForBank(updatedSoldier);
-    setBankForm(prev => ({ ...prev, description: '' }));
+    setBankForm(prev => ({ ...prev, description: '', relatedTransactionId: '' }));
   };
 
   const handleDeleteTransaction = (tId: string) => {
@@ -1297,6 +1299,37 @@ export const Dashboard: React.FC = () => {
                                     onChange={e => setBankForm({...bankForm, date: e.target.value})}
                                 />
                             </div>
+
+                            {bankForm.type === 'DEBIT' && (
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Vincular à Aquisição</label>
+                                    <select 
+                                        className="w-full p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-purple-500 shadow-sm dark:text-white"
+                                        value={bankForm.relatedTransactionId}
+                                        onChange={e => {
+                                            const selectedId = e.target.value;
+                                            const credit = selectedSoldierForBank?.bankHistory?.find(t => t.id === selectedId);
+                                            setBankForm({
+                                                ...bankForm, 
+                                                relatedTransactionId: selectedId,
+                                                description: credit ? `Baixa ref. ao serviço: ${credit.description} (${new Date(credit.date + 'T12:00:00').toLocaleDateString()})` : bankForm.description
+                                            });
+                                        }}
+                                    >
+                                        <option value="">-- Selecione o serviço (Opcional) --</option>
+                                        {(selectedSoldierForBank?.bankHistory || [])
+                                            .filter(t => t.type === 'CREDIT')
+                                            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                            .map(t => (
+                                                <option key={t.id} value={t.id}>
+                                                    {new Date(t.date + 'T12:00:00').toLocaleDateString()} - {t.description}
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+                            )}
+
                             <div>
                                 <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
                                     {bankForm.type === 'CREDIT' ? 'Motivo da Aquisição' : 'Observação da Baixa'}

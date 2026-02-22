@@ -13,11 +13,12 @@ import {
   Search,
   AlertCircle,
   Clock,
-  Briefcase
+  Briefcase,
+  History
 } from 'lucide-react';
 import { Rank, Role, Status, Soldier, Roster, Shift, BankTransaction } from '../types';
 
-type ReportType = 'personnel' | 'shifts' | 'absences' | 'extra_duty' | 'bank';
+type ReportType = 'personnel' | 'shifts' | 'absences' | 'extra_duty' | 'bank' | 'bank_history';
 
 export const Reports: React.FC = () => {
   const [activeReport, setActiveReport] = useState<ReportType>('personnel');
@@ -141,7 +142,14 @@ export const Reports: React.FC = () => {
             className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-all ${activeReport === 'bank' ? 'border-pm-600 bg-pm-50 dark:bg-pm-900/20 text-pm-900 dark:text-white' : 'border-gray-100 dark:border-slate-800 hover:border-pm-200 text-gray-600 dark:text-gray-400'}`}
           >
             <Briefcase size={20} />
-            <span className="font-bold uppercase text-xs">Banco de Folgas</span>
+            <span className="font-bold uppercase text-xs">Saldo de Folgas</span>
+          </button>
+          <button 
+            onClick={() => setActiveReport('bank_history')}
+            className={`flex items-center space-x-3 p-4 rounded-xl border-2 transition-all ${activeReport === 'bank_history' ? 'border-pm-600 bg-pm-50 dark:bg-pm-900/20 text-pm-900 dark:text-white' : 'border-gray-100 dark:border-slate-800 hover:border-pm-200 text-gray-600 dark:text-gray-400'}`}
+          >
+            <History size={20} />
+            <span className="font-bold uppercase text-xs">Log de Movimentações</span>
           </button>
         </div>
       </div>
@@ -196,7 +204,12 @@ export const Reports: React.FC = () => {
         <div className="hidden print:block p-8 border-b-2 border-pm-900 mb-6">
            <div className="flex justify-between items-center">
               <div className="flex items-center space-x-4">
-                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Bras%C3%A3o_da_Pol%C3%ADcia_Militar_do_Cear%C3%A1.png" className="h-16 w-16 object-contain" alt="PMCE" />
+                 <img 
+                   src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Bras%C3%A3o_da_Pol%C3%ADcia_Militar_do_Cear%C3%A1.png" 
+                   className="h-16 w-16 object-contain" 
+                   alt="PMCE" 
+                   referrerPolicy="no-referrer"
+                 />
                  <div>
                     <h1 className="text-lg font-black uppercase leading-tight">Polícia Militar do Ceará</h1>
                     <h2 className="text-md font-bold uppercase text-gray-700">Diretoria de Saúde - DS</h2>
@@ -204,7 +217,8 @@ export const Reports: React.FC = () => {
                       activeReport === 'personnel' ? 'Efetivo Geral' : 
                       activeReport === 'shifts' ? 'Produtividade de Plantões' : 
                       activeReport === 'absences' ? 'Afastamentos e LTS' : 
-                      activeReport === 'bank' ? 'Banco de Folgas' : 'Escalas Extras'
+                      activeReport === 'bank' ? 'Banco de Folgas (Saldos)' : 
+                      activeReport === 'bank_history' ? 'Log de Movimentações (Banco de Folgas)' : 'Escalas Extras'
                     }</p>
                  </div>
               </div>
@@ -461,6 +475,57 @@ export const Reports: React.FC = () => {
               </table>
             </div>
           )}
+
+          {activeReport === 'bank_history' && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-end mb-4">
+                <h4 className="text-lg font-black text-pm-900 dark:text-white uppercase tracking-tighter">Log de Movimentações do Banco de Folgas</h4>
+                <span className="text-xs font-bold text-gray-500 uppercase">Período: {new Date(dateRange.start).toLocaleDateString()} a {new Date(dateRange.end).toLocaleDateString()}</span>
+              </div>
+
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-slate-800/50 border-b dark:border-slate-800">
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Data</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Militar</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Tipo</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400">Descrição / Motivo</th>
+                    <th className="p-3 text-[10px] font-black uppercase text-pm-600 dark:text-pm-400 text-center">Qtd</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y dark:divide-slate-800">
+                  {soldiers.flatMap(s => (s.bankHistory || []).map(t => ({ ...t, soldier: s })))
+                    .filter(t => {
+                      const tDate = new Date(t.date);
+                      const start = new Date(dateRange.start);
+                      const end = new Date(dateRange.end);
+                      return tDate >= start && tDate <= end;
+                    })
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map(t => (
+                      <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3 text-xs font-bold text-gray-600 dark:text-gray-400">{new Date(t.date + 'T12:00:00').toLocaleDateString()}</td>
+                        <td className="p-3">
+                          <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{t.soldier.rank}</div>
+                          <div className="text-xs font-black text-pm-900 dark:text-white uppercase">{t.soldier.name}</div>
+                        </td>
+                        <td className="p-3">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                            t.type === 'CREDIT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {t.type === 'CREDIT' ? 'Aquisição' : 'Gozo'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-xs text-gray-700 dark:text-gray-300 max-w-xs">{t.description}</td>
+                        <td className={`p-3 text-center text-sm font-black ${t.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'}`}>
+                          {t.type === 'CREDIT' ? '+' : '-'}{t.amount || 1}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Print Footer */}
@@ -481,9 +546,15 @@ export const Reports: React.FC = () => {
       {/* CSS for printing */}
       <style>{`
         @media print {
+          @page {
+            margin: 1cm;
+            size: auto;
+          }
           body {
             background: white !important;
             color: black !important;
+            overflow: visible !important;
+            height: auto !important;
           }
           .no-print {
             display: none !important;
@@ -491,11 +562,25 @@ export const Reports: React.FC = () => {
           main {
             padding: 0 !important;
             margin: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+            display: block !important;
           }
           .max-w-7xl {
             max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .flex, .grid {
+            display: block !important;
+          }
+          .space-y-6 > * + * {
+            margin-top: 1.5rem !important;
           }
           table {
+            width: 100% !important;
+            border-collapse: collapse !important;
             page-break-inside: auto;
           }
           tr {
@@ -507,6 +592,20 @@ export const Reports: React.FC = () => {
           }
           tfoot {
             display: table-footer-group;
+          }
+          .bg-white, .bg-gray-50, .dark:bg-slate-900, .dark:bg-slate-800 {
+            background-color: white !important;
+            color: black !important;
+          }
+          .text-white, .dark:text-white {
+            color: black !important;
+          }
+          .shadow-xl, .shadow-2xl, .shadow-md, .shadow-sm {
+            shadow: none !important;
+            box-shadow: none !important;
+          }
+          .border, .border-2 {
+            border-color: #eee !important;
           }
         }
       `}</style>

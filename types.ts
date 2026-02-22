@@ -57,6 +57,7 @@ export interface BankTransaction {
   description: string; // Motivo (ex: Serviço Extra, Doação Sangue, Gozo de Folga)
   amount: number; // Quantidade de dias (geralmente 1)
   recordedAt: string; // Data do registro no sistema
+  relatedTransactionId?: string; // ID da transação de crédito relacionada (para baixas)
 }
 
 export interface Soldier {
