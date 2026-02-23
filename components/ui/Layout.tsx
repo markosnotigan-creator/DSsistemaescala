@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { 
   Users, 
   Settings, 
@@ -17,22 +16,15 @@ import { db } from '../../services/store';
 
 interface LayoutProps {
   children: React.ReactNode;
+  activePage: string;
+  onNavigate: (page: string) => void;
   isDarkMode: boolean;
   toggleTheme: () => void;
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleTheme }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, activePage, onNavigate, isDarkMode, toggleTheme }) => {
   const user = db.getCurrentUser();
-  const location = useLocation();
-  const activePage = location.pathname;
-
   const isAdmin = user.role === 'ADMIN';
-  const isOperator = isAdmin || user.role === 'USER'; // Adjusting logic for simplified roles
-  
-  const signOut = () => {
-    localStorage.removeItem('current_user');
-    window.location.href = '/';
-  };
   
   // Estado para o evento de instalação (PWA)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -58,29 +50,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
     setDeferredPrompt(null);
   };
 
-  const NavItem = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => (
-    <Link
-      to={to}
+  const NavItem = ({ id, icon: Icon, label }: { id: string, icon: any, label: string }) => (
+    <button
+      onClick={() => onNavigate(id)}
       className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all duration-200
-        ${activePage === to 
+        ${activePage === id 
           ? 'bg-pm-700 text-white border-r-4 border-gov-yellow shadow-inner' 
           : 'text-pm-100 hover:bg-pm-800 hover:text-white'}`}
     >
       <Icon size={20} />
       <span>{label}</span>
-    </Link>
+    </button>
   );
-
-  const getPageTitle = () => {
-    switch (activePage) {
-      case '/': return 'Visão Geral do Efetivo';
-      case '/personnel': return 'Cadastro de Militares';
-      case '/rosters': return 'Gerenciamento de Escalas';
-      case '/reports': return 'Relatórios e Estatísticas';
-      case '/settings': return 'Configurações do Sistema';
-      default: return 'Sistema de Escalas';
-    }
-  };
 
   return (
     <div className="flex h-screen bg-slate-100 dark:bg-slate-900 overflow-hidden transition-colors duration-200 print:h-auto print:overflow-visible">
@@ -97,11 +78,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
         </div>
 
         <nav className="flex-1 py-6 space-y-1">
-          <NavItem to="/" icon={LayoutDashboard} label="Painel Principal" />
-          {isOperator && <NavItem to="/rosters" icon={Scale} label="Gerenciar Escalas" />}
-          <NavItem to="/personnel" icon={Users} label="Efetivo (Militares)" />
-          <NavItem to="/reports" icon={FileText} label="Relatórios" />
-          {isAdmin && <NavItem to="/settings" icon={Settings} label="Configurações" />}
+          <NavItem id="dashboard" icon={LayoutDashboard} label="Painel Principal" />
+          <NavItem id="rosters" icon={Scale} label="Gerenciar Escalas" />
+          <NavItem id="personnel" icon={Users} label="Efetivo (Militares)" />
+          <NavItem id="reports" icon={FileText} label="Relatórios" />
+          {isAdmin && <NavItem id="settings" icon={Settings} label="Configurações" />}
         </nav>
 
         <div className="p-4 bg-pm-800/50 dark:bg-slate-900/50 mt-auto border-t border-pm-700 dark:border-slate-800 space-y-3">
@@ -118,15 +99,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
 
           <div className="flex items-center space-x-3 p-2 bg-pm-900/50 dark:bg-slate-950/50 rounded-xl">
             <div className="w-10 h-10 rounded-full bg-pm-600 dark:bg-slate-700 border-2 border-pm-500 dark:border-slate-600 flex items-center justify-center font-black text-white shadow-lg">
-              {user.username.charAt(0).toUpperCase()}
+              {user.username.charAt(0)}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate text-white">{user.username}</p>
-              <p className="text-[10px] text-pm-400 font-bold uppercase tracking-tighter">{user.role}</p>
+              <p className="text-[10px] text-pm-400 font-bold uppercase tracking-tighter">{isAdmin ? 'ADMINISTRADOR' : 'VISUALIZADOR'}</p>
             </div>
           </div>
           <button 
-            onClick={signOut} 
+            onClick={() => window.location.reload()} 
             className="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg text-xs uppercase font-black transition-all shadow-lg active:scale-95"
           >
             <LogOut size={16} />
@@ -139,7 +120,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
       <main className="flex-1 flex flex-col overflow-hidden print:overflow-visible print:h-auto">
         <header className="bg-white dark:bg-slate-800 shadow-sm h-16 flex items-center px-6 justify-between z-10 border-b border-gray-200 dark:border-slate-700 transition-colors duration-200 no-print">
           <h2 className="text-xl font-black text-pm-900 dark:text-white uppercase tracking-tight">
-            {getPageTitle()}
+            {activePage === 'dashboard' && 'Visão Geral do Efetivo'}
+            {activePage === 'personnel' && 'Cadastro de Militares'}
+            {activePage === 'rosters' && 'Gerenciamento de Escalas'}
+            {activePage === 'reports' && 'Relatórios e Estatísticas'}
+            {activePage === 'settings' && 'Configurações do Sistema'}
           </h2>
           
           <div className="flex items-center space-x-4">

@@ -116,7 +116,6 @@ export interface Shift {
 export interface RosterRow {
   id: string;
   label: string;
-  hidePhone?: boolean;
 }
 
 export interface RosterSection {
@@ -168,7 +167,9 @@ export interface TeamMapping {
   shiftName: string;
 }
 
+export type UserRole = 'ADMIN' | 'USER';
+
 export interface User {
   username: string;
-  role: 'ADMIN' | 'USER';
+  role: UserRole;
 }
