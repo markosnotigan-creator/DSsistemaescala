@@ -85,9 +85,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     setOrientation(prev => prev === 'portrait' ? 'landscape' : 'portrait');
   };
 
-  // Processamento de dados para Escala Extra (Lista)
-  const extraRosterData = useMemo(() => {
-    if (!isExtra) return [];
+  // Processamento de dados para Escala Extra (Lista Agrupada por Quadro)
+  const extraRosterDataGrouped = useMemo(() => {
+    if (!isExtra) return {};
     
     const validShifts = roster.shifts.filter(s => s.soldierId);
     const list = validShifts.map(shift => {
@@ -95,12 +95,23 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
       return { shift, soldier };
     }).filter(item => item.soldier) as { shift: any, soldier: typeof allSoldiers[0] }[];
 
-    return list.sort((a, b) => {
-      const weightA = getRankWeight(a.soldier.rank);
-      const weightB = getRankWeight(b.soldier.rank);
-      if (weightA !== weightB) return weightA - weightB;
-      return a.soldier.name.localeCompare(b.soldier.name);
+    const grouped: Record<string, typeof list> = {};
+    list.forEach(item => {
+      const cadre = item.soldier.cadre || 'OUTROS';
+      if (!grouped[cadre]) grouped[cadre] = [];
+      grouped[cadre].push(item);
     });
+
+    Object.keys(grouped).forEach(cadre => {
+      grouped[cadre].sort((a, b) => {
+        const weightA = getRankWeight(a.soldier.rank);
+        const weightB = getRankWeight(b.soldier.rank);
+        if (weightA !== weightB) return weightA - weightB;
+        return a.soldier.name.localeCompare(b.soldier.name);
+      });
+    });
+
+    return grouped;
   }, [roster, allSoldiers, isExtra]);
 
   const handleDownloadPDF = async () => {
@@ -163,8 +174,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     const s = item.soldier;
 
     if (h.includes('GRAD') || h.includes('POSTO')) return getAbbreviatedRank(s.rank);
-    if (h.includes('COMPLETO')) return <span className="text-[9px] font-bold text-left block pl-2">{s.fullName || s.name}</span>;
-    if (h.includes('NOME')) return <div className="text-left pl-2 font-bold uppercase truncate">{s.name}</div>;
+    if (h.includes('COMPLETO')) return <span className="text-[9px] font-bold text-left block pl-2">{s.fullName || s.name} {s.roleShort}</span>;
+    if (h.includes('NOME')) return <div className="text-left pl-2 font-bold uppercase truncate">{s.name} {s.roleShort}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
     if (h === 'MAT' || h === 'MAT.' || h === 'NUM' || h === 'NUM.') return s.matricula || '-';
@@ -288,18 +299,27 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                               </tr>
                             </thead>
                             <tbody>
-                              {extraRosterData.slice(0, 28).map((item, index) => (
-                                <tr key={item.soldier.id}>
-                                  {HEADERS.map((header, colIndex) => (
-                                     <td key={colIndex} className="border border-black p-0.5 text-center">
-                                        {header.includes('ORD') ? (
-                                           <span className="font-bold">{(index + 1).toString().padStart(2, '0')}</span>
-                                        ) : (
-                                           renderExtraCell(header, item, colIndex)
-                                        )}
-                                     </td>
+                              {(Object.entries(extraRosterDataGrouped) as [string, any[]][]).map(([cadre, items]) => (
+                                <React.Fragment key={cadre}>
+                                  <tr className="bg-gray-100">
+                                    <td colSpan={HEADERS.length} className="border border-black p-1 font-black text-center uppercase text-[10pt]">
+                                      QUADRO: {cadre}
+                                    </td>
+                                  </tr>
+                                  {items.map((item, index) => (
+                                    <tr key={item.soldier.id}>
+                                      {HEADERS.map((header, colIndex) => (
+                                        <td key={colIndex} className="border border-black p-0.5 text-center">
+                                          {header.includes('ORD') ? (
+                                            <span className="font-bold">{(index + 1).toString().padStart(2, '0')}</span>
+                                          ) : (
+                                            renderExtraCell(header, item, colIndex)
+                                          )}
+                                        </td>
+                                      ))}
+                                    </tr>
                                   ))}
-                                </tr>
+                                </React.Fragment>
                               ))}
                             </tbody>
                         </table>
@@ -358,7 +378,10 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                const legend = shift.note || '';
                                                return sdr ? (
                                                   <div key={i} className="text-[7pt] font-bold uppercase leading-tight">
-                                                     {getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {legend && <span className="ml-0.5 text-blue-800 font-black">{legend}</span>}
+                                                     <div>{getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort} {legend && <span className="ml-0.5 text-blue-800 font-black">{legend}</span>}</div>
+                                                     {!row.hidePhone && !roster.hidePhone && sdr.phone && (
+                                                        <div className="text-[6pt] text-gray-500 font-medium leading-none mt-0.5">{sdr.phone}</div>
+                                                     )}
                                                   </div>
                                                ) : null;
                                             }) : <span className="text-[6pt] text-gray-300 font-bold">***</span>}
@@ -456,9 +479,11 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                  {sdr ? (
                                                     <div className="flex flex-col items-center justify-center w-full h-full leading-none px-0.5 py-0.5">
                                                        <div className="text-[8.5pt] font-bold uppercase text-center w-full break-words tracking-tight leading-tight">
-                                                         {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]}
+                                                         {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
                                                        </div>
-                                                       <div className="text-[7pt] font-bold text-gray-600 mt-0.5 scale-90 leading-tight">{sdr.phone || '-'}</div>
+                                                       {!roster.hidePhone && (
+                                                         <div className="text-[8.5pt] font-bold text-gray-600 mt-0.5 leading-tight">{sdr.phone || '-'}</div>
+                                                       )}
                                                        {legend && (
                                                          <div className="text-[7pt] font-black text-blue-800 mt-0.5 scale-90 leading-tight">{legend}</div>
                                                        )}

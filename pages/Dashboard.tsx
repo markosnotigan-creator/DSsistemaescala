@@ -28,11 +28,13 @@ const getRankWeight = (rank: string) => {
 };
 
 export const Dashboard: React.FC = () => {
+  const user = db.getCurrentUser();
   const [soldiers, setSoldiers] = useState<Soldier[]>([]);
   const [rosters, setRosters] = useState<Roster[]>([]);
   const settings = db.getSettings();
-  const currentUser = db.getCurrentUser();
-  const isAdmin = currentUser.role === 'ADMIN';
+  
+  const isAdmin = user.role === 'ADMIN';
+  const isOperator = isAdmin || user.role === 'USER';
 
   // --- SYNC WITH FIREBASE ---
   useEffect(() => {
@@ -991,7 +993,7 @@ export const Dashboard: React.FC = () => {
                  <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-start">
                     <div>
                        <h3 className="text-xl font-black text-pm-900 dark:text-white uppercase">Gerar Escala</h3>
-                       {isAdmin ? (
+                       {isOperator ? (
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mt-1">Selecione a quantidade de militares para escalar.</p>
                        ) : (
                           <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mt-1">Acesso restrito. Modo de visualização.</p>
@@ -1001,7 +1003,7 @@ export const Dashboard: React.FC = () => {
                  </div>
 
                  <div className="p-6 space-y-6 flex-1 overflow-y-auto">
-                    {isAdmin ? (
+                    {isOperator ? (
                        <>
                           {/* Controles de Geração */}
                           <div className="bg-orange-50 dark:bg-orange-900/20 p-5 rounded-2xl border border-orange-100 dark:border-orange-800">
@@ -1266,8 +1268,8 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
-                     {/* Coluna Esquerda: Formulário de Ação (Apenas para Admin) */}
-                     {isAdmin && (
+                     {/* Coluna Esquerda: Formulário de Ação (Apenas para Admin e Operador) */}
+                     {isOperator && (
                         <div className="w-full lg:w-80 bg-gray-50 dark:bg-slate-900 border-r border-gray-100 dark:border-slate-700 p-6 flex flex-col overflow-y-auto">
                             <h4 className="font-black text-sm uppercase text-gray-500 dark:text-gray-400 mb-4 flex items-center">
                             {bankForm.type === 'CREDIT' ? <PlusCircle className="mr-2 text-green-600" size={16}/> : <MinusCircle className="mr-2 text-red-600" size={16}/>}

@@ -5,6 +5,7 @@ import { Soldier, Rank, Role, Status, Cadre } from '../types';
 import { Plus, Search, Edit2, Trash2, UserX, UserCheck, FileSpreadsheet, Coffee, Save, X, Shield, AlertTriangle, ListOrdered } from 'lucide-react';
 
 export const Personnel: React.FC = () => {
+  const user = db.getCurrentUser();
   const [soldiers, setSoldiers] = useState<Soldier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -20,8 +21,9 @@ export const Personnel: React.FC = () => {
     absenceStartDate: '', absenceEndDate: '', folgaReason: '', availableForExtra: true, orderExtra: 0
   });
 
-  const currentUser = db.getCurrentUser();
-  const isAdmin = currentUser.role === 'ADMIN';
+  const isAdmin = user.role === 'ADMIN';
+  const isOperator = isAdmin; // Only admin can edit personnel in this simplified model
+  const isViewer = user.role === 'USER';
 
   useEffect(() => {
     loadData();
@@ -203,7 +205,7 @@ export const Personnel: React.FC = () => {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        {isAdmin && (
+        {isOperator && (
           <div className="flex space-x-2">
             <button 
               onClick={() => setIsImportModalOpen(true)}
@@ -235,7 +237,7 @@ export const Personnel: React.FC = () => {
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Função / Equipe</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Setor</th>
               <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Situação</th>
-              {isAdmin && <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Ações</th>}
+              {!isViewer && <th className="px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider text-right">Ações</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
@@ -273,7 +275,7 @@ export const Personnel: React.FC = () => {
                         {formatDate(s.absenceStartDate)} a {formatDate(s.absenceEndDate)}
                       </span>
                     )}
-
+ 
                     {/* Reason for FOLGA */}
                     {s.status === Status.FOLGA && s.folgaReason && (
                       <span className="text-[10px] text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 px-1 rounded border border-yellow-200 dark:border-yellow-800">
@@ -282,10 +284,10 @@ export const Personnel: React.FC = () => {
                     )}
                   </div>
                 </td>
-                {isAdmin && (
+                {!isViewer && (
                   <td className="px-6 py-4 text-sm text-right space-x-2 whitespace-nowrap">
                     <button onClick={() => handleEdit(s)} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-1" title="Editar"><Edit2 size={18} /></button>
-                    <button onClick={() => handleDelete(s.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1" title="Excluir"><Trash2 size={18} /></button>
+                    {isAdmin && <button onClick={() => handleDelete(s.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1" title="Excluir"><Trash2 size={18} /></button>}
                   </td>
                 )}
               </tr>
@@ -483,7 +485,7 @@ export const Personnel: React.FC = () => {
 
             {/* Footer Actions */}
             <div className="mt-6 pt-4 border-t dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 sticky bottom-0">
-               {editingId ? (
+               {isAdmin && editingId ? (
                  <button 
                   onClick={() => editingId && handleDelete(editingId)}
                   className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg flex items-center transition"
@@ -493,14 +495,16 @@ export const Personnel: React.FC = () => {
                ) : (
                  <div></div> 
                )}
-
+ 
                <div className="flex space-x-3">
                   <button onClick={() => setIsModalOpen(false)} className="px-6 py-2 border dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-medium">
                     Cancelar
                   </button>
-                  <button onClick={handleSave} className="px-6 py-2 bg-pm-600 text-white rounded-lg hover:bg-pm-700 font-bold flex items-center shadow-lg">
-                    <Save size={18} className="mr-2" /> Salvar Alterações
-                  </button>
+                  {!isViewer && (
+                    <button onClick={handleSave} className="px-6 py-2 bg-pm-600 text-white rounded-lg hover:bg-pm-700 font-bold flex items-center shadow-lg">
+                      <Save size={18} className="mr-2" /> Salvar Alterações
+                    </button>
+                  )}
                </div>
             </div>
           </div>

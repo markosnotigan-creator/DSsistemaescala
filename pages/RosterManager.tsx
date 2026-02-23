@@ -7,7 +7,7 @@ import {
   Trash2, Plus, PlusCircle, MinusCircle, FileText, 
   Edit3, Search, X as CloseIcon, User, Scale, 
   Check, ChevronDown, Calendar, Wand2,
-  Columns, Zap, Sparkles
+  Columns, Zap, Sparkles, Eye, EyeOff
 } from 'lucide-react';
 import { PrintPreview } from '../components/pdf/PrintPreview';
 
@@ -170,9 +170,9 @@ export const RosterManager: React.FC = () => {
     return active.filter(s => s.name.toLowerCase().includes(q) || s.matricula?.includes(q));
   }, [soldiers, searchQuery]);
 
-  // Lista Ordenada para Escala Extra
-  const extraRosterData = useMemo(() => {
-    if (!selectedRoster || selectedRoster.type !== 'cat_extra') return [];
+  // Lista Ordenada para Escala Extra (Agrupada por Quadro)
+  const extraRosterDataGrouped = useMemo(() => {
+    if (!selectedRoster || selectedRoster.type !== 'cat_extra') return {};
     
     const validShifts = selectedRoster.shifts.filter(s => s.soldierId);
     
@@ -181,12 +181,23 @@ export const RosterManager: React.FC = () => {
       return { shift, soldier };
     }).filter(item => item.soldier) as { shift: any, soldier: Soldier }[];
 
-    return list.sort((a, b) => {
-      const weightA = getRankWeight(a.soldier.rank);
-      const weightB = getRankWeight(b.soldier.rank);
-      if (weightA !== weightB) return weightA - weightB;
-      return a.soldier.name.localeCompare(b.soldier.name);
+    const grouped: Record<string, typeof list> = {};
+    list.forEach(item => {
+      const cadre = item.soldier.cadre || 'OUTROS';
+      if (!grouped[cadre]) grouped[cadre] = [];
+      grouped[cadre].push(item);
     });
+
+    Object.keys(grouped).forEach(cadre => {
+      grouped[cadre].sort((a, b) => {
+        const weightA = getRankWeight(a.soldier.rank);
+        const weightB = getRankWeight(b.soldier.rank);
+        if (weightA !== weightB) return weightA - weightB;
+        return a.soldier.name.localeCompare(b.soldier.name);
+      });
+    });
+
+    return grouped;
   }, [selectedRoster, soldiers]);
 
   // Função para calcular qual equipe está de serviço no dia (Reutilizada do Dashboard para consistência)
@@ -544,6 +555,16 @@ export const RosterManager: React.FC = () => {
     setEditingRowPos(null);
   };
 
+  const toggleRowPhone = (sIdx: number, rIdx: number) => {
+    if (!selectedRoster || !selectedRoster.sections) return;
+    const newSections = selectedRoster.sections.map((sec, idx) => {
+      if (idx !== sIdx) return sec;
+      const newRows = sec.rows.map((row, i) => i === rIdx ? { ...row, hidePhone: !row.hidePhone } : row);
+      return { ...sec, rows: newRows };
+    });
+    updateRoster({ ...selectedRoster, sections: newSections });
+  };
+
   const updateShift = (date: string, period: string, soldierId: string) => {
     if (!selectedRoster) return;
     const newShifts = [...selectedRoster.shifts];
@@ -688,8 +709,8 @@ export const RosterManager: React.FC = () => {
 
     if (h.includes('ORD') || h.includes('ITEM')) return <span className="font-bold">#</span>; 
     if (h.includes('GRAD') || h.includes('POSTO')) return <span>{getAbbreviatedRank(s.rank)}</span>;
-    if (h.includes('COMPLETO')) return <span className="font-bold text-left block pl-2 text-[9px]">{s.fullName || s.name}</span>;
-    if (h.includes('NOME')) return <span className="font-bold text-left block pl-2 truncate">{s.name}</span>;
+    if (h.includes('COMPLETO')) return <span className="font-bold text-left block pl-2 text-[9px]">{s.fullName || s.name} {s.roleShort}</span>;
+    if (h.includes('NOME')) return <span className="font-bold text-left block pl-2 truncate">{s.name} {s.roleShort}</span>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return <span>{s.matricula || '-'}</span>;
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return <span>{s.mf || '-'}</span>;
     if (h === 'MAT' || h === 'MAT.' || h === 'NUM' || h === 'NUM.') return <span>{s.matricula || '-'}</span>;
@@ -953,7 +974,7 @@ export const RosterManager: React.FC = () => {
                    </div>
                  )}
 
-                 <table className="w-full border-collapse border border-black text-[11pt] mb-4 table-auto text-black">
+                  <table className="w-full border-collapse border border-black text-[11pt] mb-4 table-auto text-black">
                     <thead>
                       <tr className="bg-[#e6e6e6]">
                         {HEADERS.map((header, idx) => (
@@ -979,30 +1000,39 @@ export const RosterManager: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {extraRosterData.map((item, index) => (
-                        <tr key={item.soldier.id} className="group hover:bg-gray-50">
-                          {HEADERS.map((header, colIndex) => (
-                             <td key={colIndex} className="border border-black p-0.5 text-center align-middle">
-                                {header.includes('ORD') ? (
-                                   <span className="font-bold">{(index + 1).toString().padStart(2, '0')}</span>
-                                ) : (
-                                   renderDynamicCell(header, item, colIndex)
-                                )}
-                             </td>
-                          ))}
-                          
-                          {isAdmin && (
-                            <td className="p-0 border-none align-middle text-center bg-white">
-                              <button onClick={() => handleRemoveSoldierFromExtra(item.soldier.id)} className="text-red-300 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-all">
-                                <MinusCircle size={16}/>
-                              </button>
+                      {(Object.entries(extraRosterDataGrouped) as [string, any[]][]).map(([cadre, items]) => (
+                        <React.Fragment key={cadre}>
+                          <tr className="bg-gray-100">
+                            <td colSpan={HEADERS.length + (isAdmin ? 1 : 0)} className="border border-black p-1 font-black text-center uppercase text-[10pt]">
+                              QUADRO: {cadre}
                             </td>
-                          )}
-                        </tr>
+                          </tr>
+                          {items.map((item, index) => (
+                            <tr key={item.soldier.id} className="group hover:bg-gray-50">
+                              {HEADERS.map((header, colIndex) => (
+                                <td key={colIndex} className="border border-black p-0.5 text-center align-middle">
+                                  {header.includes('ORD') ? (
+                                    <span className="font-bold">{(index + 1).toString().padStart(2, '0')}</span>
+                                  ) : (
+                                    renderDynamicCell(header, item, colIndex)
+                                  )}
+                                </td>
+                              ))}
+                              
+                              {isAdmin && (
+                                <td className="p-0 border-none align-middle text-center bg-white">
+                                  <button onClick={() => handleRemoveSoldierFromExtra(item.soldier.id)} className="text-red-300 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-all">
+                                    <MinusCircle size={16}/>
+                                  </button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </React.Fragment>
                       ))}
-                      {extraRosterData.length === 0 && (<tr><td colSpan={HEADERS.length + 1} className="border border-black p-8 text-center text-gray-300 italic">Nenhum militar adicionado à lista.</td></tr>)}
+                      {Object.keys(extraRosterDataGrouped).length === 0 && (<tr><td colSpan={HEADERS.length + 1} className="border border-black p-8 text-center text-gray-300 italic">Nenhum militar adicionado à lista.</td></tr>)}
                     </tbody>
-                 </table>
+                  </table>
 
                  <div className="text-right text-[12pt] mb-16 mt-auto relative group text-black">
                     <span className="font-bold">{settings.city},</span> 
@@ -1061,15 +1091,27 @@ export const RosterManager: React.FC = () => {
                        )}
                        
                        {(selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_ast') && (
-                         <label className="flex items-center space-x-2 cursor-pointer group">
-                            <div 
-                              onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
-                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hideWeekends ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
-                            >
-                               {selectedRoster.hideWeekends && <Check size={10} />}
-                            </div>
-                            <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Finais de Semana</span>
-                         </label>
+                         <div className="flex items-center space-x-4">
+                           <label className="flex items-center space-x-2 cursor-pointer group">
+                              <div 
+                                onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hideWeekends ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
+                              >
+                                 {selectedRoster.hideWeekends && <Check size={10} />}
+                              </div>
+                              <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Finais de Semana</span>
+                           </label>
+
+                           <label className="flex items-center space-x-2 cursor-pointer group">
+                              <div 
+                                onClick={() => updateRoster({...selectedRoster, hidePhone: !selectedRoster.hidePhone})}
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hidePhone ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
+                              >
+                                 {selectedRoster.hidePhone && <Check size={10} />}
+                              </div>
+                              <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Contato</span>
+                           </label>
+                         </div>
                        )}
                     </div>
                   )}
@@ -1086,101 +1128,127 @@ export const RosterManager: React.FC = () => {
                         </tr>
                      </thead>
                      <tbody>
-                        {(selectedRoster.sections || []).flatMap(sec => sec.rows).map((row, rIdx) => (
-                           <tr key={row.id}>
-                              <td className={`border border-black bg-[#cbd5b0] p-2 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[8pt] relative group ${isAdmin ? 'hover:bg-[#b0bc94] cursor-pointer' : ''}`}>
-                                 {isAdmin && editingRowPos?.rIdx === rIdx ? (
-                                    <textarea 
-                                      autoFocus
-                                      className="w-full h-full bg-white text-center outline-none resize-none border border-pm-500 rounded text-black"
-                                      defaultValue={row.label}
-                                      onBlur={e => updateRowLabel(0, rIdx, e.target.value)} 
-                                    />
-                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-black" onClick={() => isAdmin && setEditingRowPos({sIdx: 0, rIdx})}>
-                                      {row.label}
-                                    </div>
-                                 )}
-                                 
-                                 {isAdmin && (
-                                   <div className="absolute left-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button 
-                                        onClick={(e) => { e.stopPropagation(); deleteRow(0, rIdx); }} 
-                                        className="bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
-                                        title="Excluir este Bloco/Setor"
-                                      >
-                                        <Trash2 size={10}/>
-                                      </button>
-                                   </div>
-                                 )}
-                              </td>
-                              
-                              {dates.map(d => {
-                                 const dStr = d.toISOString().split('T')[0];
-                                 const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === row.id);
-                                 
-                                 return (
-                                    <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''}`}>
-                                       <div className="flex flex-col space-y-1 min-h-[30px]">
-                                          {shiftsInCell.map((shift, i) => {
-                                             const sdr = soldiers.find(s => s.id === shift.soldierId);
-                                             const shiftId = `${shift.date}-${shift.period}-${shift.soldierId}`;
-                                             const legend = shift.note || "";
-                                             
-                                             return sdr ? (
-                                                <div key={i} className="text-[7pt] font-bold uppercase leading-tight relative group/item text-black">
-                                                   {getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} 
+                        {(selectedRoster.sections || []).map((sec, sIdx) => (
+                           <React.Fragment key={sIdx}>
+                              {sec.rows.map((row, rIdx) => (
+                                 <tr key={row.id}>
+                                    <td className={`border border-black bg-[#cbd5b0] p-2 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[8pt] relative group ${isAdmin ? 'hover:bg-[#b0bc94] cursor-pointer' : ''}`}>
+                                       {isAdmin && editingRowPos?.sIdx === sIdx && editingRowPos?.rIdx === rIdx ? (
+                                          <textarea 
+                                            autoFocus
+                                            className="w-full h-full bg-white text-center outline-none resize-none border border-pm-500 rounded text-black"
+                                            defaultValue={row.label}
+                                            onBlur={e => updateRowLabel(sIdx, rIdx, e.target.value)} 
+                                          />
+                                       ) : (
+                                          <div className="w-full h-full flex flex-col items-center justify-center text-black" onClick={() => isAdmin && setEditingRowPos({sIdx, rIdx})}>
+                                            <span>{row.label}</span>
+                                            {row.hidePhone && <span className="text-[6pt] text-red-600 font-black mt-1">(CONTATO OCULTO)</span>}
+                                          </div>
+                                       )}
+                                       
+                                       {isAdmin && (
+                                         <div className="absolute left-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-1">
+                                            <button 
+                                              onClick={(e) => { e.stopPropagation(); deleteRow(sIdx, rIdx); }} 
+                                              className="bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
+                                              title="Excluir este Bloco/Setor"
+                                            >
+                                              <Trash2 size={10}/>
+                                            </button>
+                                            <button 
+                                              onClick={(e) => { e.stopPropagation(); toggleRowPhone(sIdx, rIdx); }} 
+                                              className={`rounded-full p-1 shadow transition-colors ${row.hidePhone ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                              title={row.hidePhone ? "Exibir Contatos nesta linha" : "Ocultar Contatos nesta linha"}
+                                            >
+                                              {row.hidePhone ? <EyeOff size={10}/> : <Eye size={10}/>}
+                                            </button>
+                                         </div>
+                                       )}
+                                    </td>
+                                    
+                                    {dates.map(d => {
+                                       const dStr = d.toISOString().split('T')[0];
+                                       const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === row.id);
+                                       
+                                       return (
+                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''}`}>
+                                             <div className="flex flex-col space-y-1 min-h-[30px]">
+                                                {shiftsInCell.map((shift, i) => {
+                                                   const sdr = soldiers.find(s => s.id === shift.soldierId);
+                                                   const shiftId = `${shift.date}-${shift.period}-${shift.soldierId}`;
+                                                   const legend = shift.note || "";
                                                    
-                                                   {isAdmin && editingLegendId === shiftId ? (
-                                                     <input 
-                                                       autoFocus
-                                                       className="ml-1 w-12 bg-white border border-blue-500 rounded text-blue-900 px-0.5 outline-none font-black text-center"
-                                                       defaultValue={legend}
-                                                       onBlur={e => updateShiftNote(shift, e.target.value)}
-                                                       onKeyDown={e => e.key === 'Enter' && updateShiftNote(shift, (e.target as HTMLInputElement).value)}
-                                                     />
-                                                   ) : (
-                                                     <span 
-                                                       onClick={() => isAdmin && setEditingLegendId(shiftId)}
-                                                       className={`ml-1 font-black ${isAdmin ? 'cursor-pointer hover:underline' : ''} ${legend ? 'text-blue-800' : 'text-gray-300'}`}
-                                                       title={isAdmin ? "Clique para preencher a lacuna" : ""}
-                                                     >
-                                                       {legend || (isAdmin ? '(...)' : '')}
-                                                     </span>
-                                                   )}
+                                                   return sdr ? (
+                                                      <div key={i} className="text-[7pt] font-bold uppercase leading-tight relative group/item text-black">
+                                                         <div>{getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort}</div>
+                                                         
+                                                         {!row.hidePhone && !selectedRoster.hidePhone && sdr.phone && (
+                                                            <div className="text-[6pt] text-gray-500 font-medium">{sdr.phone}</div>
+                                                         )}
 
-                                                   {isAdmin && (
-                                                      <button 
-                                                        onClick={(e) => { e.stopPropagation(); removeShiftFromCell(shift); }}
-                                                        className="absolute -right-1 -top-1 text-red-500 opacity-0 group-hover/item:opacity-100 bg-white rounded-full p-0.5"
-                                                      >
-                                                         <CloseIcon size={8}/>
-                                                      </button>
-                                                   )}
-                                                </div>
-                                             ) : null;
-                                          })}
-                                          {isAdmin && (
-                                             <button 
-                                               onClick={() => { setActiveSearchCell({date: dStr, period: row.id}); setIsSearchOpen(true); }}
-                                               className="opacity-0 group-hover:opacity-100 self-center text-green-600 bg-green-50 rounded-full p-1 hover:bg-green-100 transition-all mt-1"
-                                               title="Adicionar Militar"
-                                             >
-                                                <Plus size={12}/>
-                                             </button>
-                                          )}
+                                                         {isAdmin && editingLegendId === shiftId ? (
+                                                           <input 
+                                                             autoFocus
+                                                             className="ml-1 w-12 bg-white border border-blue-500 rounded text-blue-900 px-0.5 outline-none font-black text-center"
+                                                             defaultValue={legend}
+                                                             onBlur={e => updateShiftNote(shift, e.target.value)}
+                                                             onKeyDown={e => e.key === 'Enter' && updateShiftNote(shift, (e.target as HTMLInputElement).value)}
+                                                           />
+                                                         ) : (
+                                                           <span 
+                                                             onClick={() => isAdmin && setEditingLegendId(shiftId)}
+                                                             className={`ml-1 font-black ${isAdmin ? 'cursor-pointer hover:underline' : ''} ${legend ? 'text-blue-800' : 'text-gray-300'}`}
+                                                             title={isAdmin ? "Clique para preencher a lacuna" : ""}
+                                                           >
+                                                             {legend || (isAdmin ? '(...)' : '')}
+                                                           </span>
+                                                         )}
+
+                                                         {isAdmin && (
+                                                            <button 
+                                                              onClick={(e) => { e.stopPropagation(); removeShiftFromCell(shift); }}
+                                                              className="absolute -right-1 -top-1 text-red-500 opacity-0 group-hover/item:opacity-100 bg-white rounded-full p-0.5"
+                                                            >
+                                                               <CloseIcon size={8}/>
+                                                            </button>
+                                                         )}
+                                                      </div>
+                                                   ) : null;
+                                                })}
+                                                {isAdmin && (
+                                                   <button 
+                                                     onClick={() => { setActiveSearchCell({date: dStr, period: row.id}); setIsSearchOpen(true); }}
+                                                     className="opacity-0 group-hover:opacity-100 self-center text-green-600 bg-green-50 rounded-full p-1 hover:bg-green-100 transition-all mt-1"
+                                                     title="Adicionar Militar"
+                                                   >
+                                                      <Plus size={12}/>
+                                                   </button>
+                                                )}
+                                             </div>
+                                          </td>
+                                       );
+                                    })}
+                                 </tr>
+                              ))}
+                              {isAdmin && (
+                                 <tr>
+                                    <td colSpan={dates.length + 1} className="bg-gray-50 border border-black p-2 text-center cursor-pointer hover:bg-green-50 transition-colors" onClick={() => addRow(sIdx)}>
+                                       <div className="flex items-center justify-center space-x-2 text-green-700 font-black uppercase text-[10px]">
+                                          <PlusCircle size={16} />
+                                          <span>Adicionar Linha em "{sec.title}"</span>
                                        </div>
                                     </td>
-                                 );
-                              })}
-                           </tr>
+                                 </tr>
+                              )}
+                           </React.Fragment>
                         ))}
                         {isAdmin && (
                            <tr>
-                              <td colSpan={dates.length + 1} className="bg-gray-50 border border-black p-2 text-center cursor-pointer hover:bg-green-50 transition-colors" onClick={() => addRow(0)}>
-                                 <div className="flex items-center justify-center space-x-2 text-green-700 font-black uppercase text-[10px]">
+                              <td colSpan={dates.length + 1} className="bg-blue-50 border border-black p-2 text-center cursor-pointer hover:bg-blue-100 transition-colors" onClick={addSection}>
+                                 <div className="flex items-center justify-center space-x-2 text-blue-700 font-black uppercase text-[10px]">
                                     <PlusCircle size={16} />
-                                    <span>Adicionar Novo Bloco/Setor</span>
+                                    <span>Adicionar Novo Bloco Inteiro</span>
                                  </div>
                               </td>
                            </tr>
@@ -1284,15 +1352,27 @@ export const RosterManager: React.FC = () => {
                        )}
 
                        {(selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_ast') && (
-                         <label className="flex items-center space-x-2 cursor-pointer group mr-4">
-                            <div 
-                              onClick={() => updateRoster({...selectedRoster, mergeWeekendRows: !selectedRoster.mergeWeekendRows})}
-                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.mergeWeekendRows ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400 group-hover:border-blue-500'}`}
-                            >
-                               {selectedRoster.mergeWeekendRows && <Check size={10} />}
-                            </div>
-                            <span className="text-[8pt] font-black text-pm-900 uppercase">Mesclar Finais de Semana</span>
-                         </label>
+                         <div className="flex items-center space-x-4 mr-4">
+                           <label className="flex items-center space-x-2 cursor-pointer group">
+                              <div 
+                                onClick={() => updateRoster({...selectedRoster, mergeWeekendRows: !selectedRoster.mergeWeekendRows})}
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.mergeWeekendRows ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400 group-hover:border-blue-500'}`}
+                              >
+                                 {selectedRoster.mergeWeekendRows && <Check size={10} />}
+                              </div>
+                              <span className="text-[8pt] font-black text-pm-900 uppercase">Mesclar Finais de Semana</span>
+                           </label>
+
+                           <label className="flex items-center space-x-2 cursor-pointer group">
+                              <div 
+                                onClick={() => updateRoster({...selectedRoster, hidePhone: !selectedRoster.hidePhone})}
+                                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedRoster.hidePhone ? 'bg-pm-700 border-pm-700 text-white' : 'bg-white border-gray-400 group-hover:border-pm-500'}`}
+                              >
+                                 {selectedRoster.hidePhone && <Check size={10} />}
+                              </div>
+                              <span className="text-[8pt] font-black text-pm-900 uppercase">Ocultar Contato</span>
+                           </label>
+                         </div>
                        )}
 
                        {selectedRoster.type === 'cat_psi' && (
@@ -1391,7 +1471,7 @@ export const RosterManager: React.FC = () => {
                                              {sdr ? (
                                                <div className="w-full relative group/item text-black">
                                                  <div className="text-[9pt] font-bold text-center leading-none uppercase truncate w-full px-0.5">
-                                                   {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]}
+                                                   {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
                                                  </div>
                                                  <div className="text-[7pt] text-center mt-0.5 font-bold text-gray-600 leading-none">
                                                     {sdr.phone || '-'}

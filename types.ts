@@ -116,6 +116,7 @@ export interface Shift {
 export interface RosterRow {
   id: string;
   label: string;
+  hidePhone?: boolean;
 }
 
 export interface RosterSection {
@@ -143,6 +144,7 @@ export interface Roster {
   customHeaders?: string[]; // Para renomear colunas na escala extra
   hideWeekends?: boolean; // Ocultar sábados e domingos
   mergeWeekendRows?: boolean; // Mesclar linhas nos finais de semana
+  hidePhone?: boolean; // Ocultar telefone na impressão
 }
 
 export interface AppSettings {
