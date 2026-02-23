@@ -59,10 +59,10 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   
   const isExtra = roster.type === 'cat_extra';
   
-  // Categorias específicas que usam layout vertical (Operational)
-  const isAmbOrPsi = roster.type === 'cat_amb' || roster.type === 'cat_psi';
+  // Categorias específicas que usam layout vertical (Operational) - Agora inclui novas escalas personalizadas
+  const isAmbOrPsi = roster.type === 'cat_amb' || roster.type === 'cat_psi' || !['cat_extra', 'cat_adm', 'cat_ast'].includes(roster.type);
   
-  // Todo o resto (Adm, Ast, Novas Personalizadas) usa layout Grade Paisagem
+  // Todo o resto (Adm, Ast) usa layout Grade Paisagem
   const isGrid = !isExtra && !isAmbOrPsi;
   
   // PADRÃO AGORA É PAISAGEM (LANDSCAPE)
@@ -214,7 +214,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
         @media print {
           @page { 
             size: ${orientation} A4; 
-            margin: 0; 
+            margin: 5mm; 
           }
           body { 
             -webkit-print-color-adjust: exact !important; 
@@ -227,12 +227,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           #roster-pdf-content { 
             width: 100% !important; 
             height: 100% !important; 
+            max-height: 100vh !important;
             box-shadow: none !important; 
             margin: 0 !important;
             transform: none !important;
             page-break-inside: avoid;
             page-break-after: avoid;
             overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           .no-print-internal { display: none !important; }
         }
@@ -276,8 +279,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           className="transition-transform duration-200 ease-out origin-top will-change-transform bg-white shadow-2xl"
         >
           {isExtra ? (
-            <div id="roster-pdf-content" className={containerClass} style={{ padding: '15mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
-                <div className="h-full flex flex-col">
+            <div id="roster-pdf-content" className={containerClass} style={{ padding: '15mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', maxHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <div className="h-full flex flex-col overflow-hidden">
                     <header className="flex justify-between items-start mb-4 h-16 relative w-full flex-shrink-0">
                         {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}
                         <div className="flex-1"></div>
@@ -334,8 +337,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                 </div>
             </div>
           ) : isGrid ? (
-            <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
-               <div className="h-full flex flex-col">
+            <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', maxHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+               <div className="h-full flex flex-col overflow-hidden">
                   <header className="text-center mb-2 flex flex-col justify-center border-b border-black/20 pb-1 relative h-12 flex-shrink-0">
                      {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
                      <div className="mx-16">
@@ -416,8 +419,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                </div>
             </div>
           ) : (
-            <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white' }}>
-                <div className="h-full flex flex-col">
+            <div id="roster-pdf-content" className={containerClass} style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', maxHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <div className="h-full flex flex-col overflow-hidden">
                     <header className="text-center mb-1 relative h-12 flex items-center justify-center flex-shrink-0">
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
                        <div className="mx-14 w-full">

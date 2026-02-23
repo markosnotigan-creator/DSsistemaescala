@@ -1053,7 +1053,7 @@ export const RosterManager: React.FC = () => {
                 </div>
              </div>
           </div>
-        ) : (selectedRoster.type !== 'cat_extra' && selectedRoster.type !== 'cat_amb' && selectedRoster.type !== 'cat_psi') ? (
+        ) : (selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_ast') ? (
           <div className="flex-1 overflow-auto bg-gray-200/80 dark:bg-slate-900 flex justify-center p-8 rounded-lg border-inner shadow-inner">
              {/* ESCALA GENÉRICA (A4 PAISAGEM) - Mantém BG White e Text Black */}
              <div className="w-[297mm] min-h-[210mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
