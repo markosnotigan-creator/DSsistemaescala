@@ -26,11 +26,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
   const location = useLocation();
   const activePage = location.pathname;
 
+  if (!user) return null;
+
   const isAdmin = user.role === 'ADMIN';
   const isOperator = isAdmin || user.role === 'USER'; // Adjusting logic for simplified roles
   
   const signOut = () => {
-    localStorage.removeItem('current_user');
+    sessionStorage.removeItem('current_user');
     window.location.href = '/';
   };
   

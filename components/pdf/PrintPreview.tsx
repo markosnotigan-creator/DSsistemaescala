@@ -65,8 +65,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   // Todo o resto (Adm, Ast) usa layout Grade Paisagem
   const isGrid = !isExtra && !isAmbOrPsi;
   
-  // PADRÃO: PAISAGEM (LANDSCAPE) PARA TODAS AS ESCALAS
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  // PADRÃO: RETRATO (PORTRAIT) PARA TODAS AS ESCALAS
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
   const cleanHeaderTitle = (roster.headerTitle || settings.orgName || '').replace(/\s*\(TESTE CONEXÃO[^)]+\)/g, '');
 
@@ -225,6 +225,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             height: ${orientation === 'landscape' ? '210mm' : '297mm'} !important; 
             box-shadow: none !important; 
             margin: 0 !important;
+            padding: 5mm !important; /* REDUZIDO PARA CABER MAIS CONTEÚDO */
             transform: none !important;
             page-break-inside: avoid;
             page-break-after: avoid;

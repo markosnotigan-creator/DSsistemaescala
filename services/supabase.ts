@@ -7,5 +7,12 @@ console.log('Supabase URL:', supabaseUrl ? 'Configurada' : 'NÃO CONFIGURADA');
 console.log('Supabase Key:', supabaseAnonKey ? 'Configurada' : 'NÃO CONFIGURADA');
 
 export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: sessionStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      }
+    }) 
   : null;

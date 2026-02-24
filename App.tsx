@@ -7,9 +7,13 @@ import { Personnel } from './pages/Personnel';
 import { RosterManager } from './pages/RosterManager';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { LocalLogin } from './components/auth/LocalLogin';
+import { db } from './services/store';
+import { User } from './types';
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [user, setUser] = useState<User | null>(db.getCurrentUser());
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -20,6 +24,12 @@ function App() {
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark');
     }
+
+    // Subscribe to auth changes
+    const unsubscribe = db.subscribe(() => {
+      setUser(db.getCurrentUser());
+    });
+    return unsubscribe;
   }, []);
 
   const toggleTheme = () => {
@@ -33,6 +43,10 @@ function App() {
       setIsDarkMode(true);
     }
   };
+
+  if (!user) {
+    return <LocalLogin />;
+  }
 
   return (
     <BrowserRouter>

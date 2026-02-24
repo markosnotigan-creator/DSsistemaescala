@@ -272,12 +272,15 @@ class StoreService {
     }
   }
 
-  getCurrentUser(): User {
-    return this.getLocal<User>('current_user') || { username: 'admin', role: 'ADMIN' };
+  getCurrentUser(): User | null {
+    const data = sessionStorage.getItem('current_user');
+    return data ? JSON.parse(data) : null;
   }
 
   login(role: 'ADMIN' | 'USER'): void {
-    this.setLocal('current_user', { username: role === 'ADMIN' ? 'Administrador' : 'Visualizador', role });
+    const user = { id: role === 'ADMIN' ? 'local-admin' : 'local-user', username: role === 'ADMIN' ? 'Administrador' : 'Visualizador', role };
+    sessionStorage.setItem('current_user', JSON.stringify(user));
+    this.notify();
   }
   
   // --- GERENCIAMENTO DE SENHA SEGURO ---
