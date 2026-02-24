@@ -472,7 +472,7 @@ export const RosterManager: React.FC = () => {
       endDate: newRosterMeta.endDate,
       creationDate: newRosterMeta.creationDate || new Date().toISOString().split('T')[0],
       shifts: initialShifts, 
-      observations: isExtra ? '' : (isAdm ? 'Obs: (M) Motorista, (T) Tarde' : 'Obs.1: ...'),
+      observations: isExtra ? '' : (isAdm ? 'Obs: (M) Motorista, (T) Tarde' : (isAmb ? 'Obs.1: Fiscal(F), Enfermeiro(E), Motorista(M), Fiscal/Motorista(F.M)' : 'Obs.1: ...')),
       observationsTitle: 'Observações Gerais',
       situationText: isExtra ? '' : '',
       subTitle: subTitle,
@@ -1386,7 +1386,7 @@ export const RosterManager: React.FC = () => {
                     </div>
                   )}
 
-                  <table className="w-full h-full table-fixed border-collapse text-black" style={{ tableLayout: 'fixed' }}>
+                  <table className="w-full h-full table-fixed border-collapse text-black">
                      <thead>
                         <tr className="h-8">
                           {dates.map((d, i) => {
@@ -1411,7 +1411,7 @@ export const RosterManager: React.FC = () => {
                           })}
                         </tr>
                      </thead>
-                     <tbody style={{ height: '100%', overflow: 'hidden' }}>
+                     <tbody>
                        {(selectedRoster.sections || []).map((sec, sIdx) => (
                           <React.Fragment key={sIdx}>
                              <tr className="h-4 bg-[#cbd5b0]">
@@ -1439,7 +1439,7 @@ export const RosterManager: React.FC = () => {
                              </tr>
 
                              {sec.rows.map((row, rIdx) => (
-                                <tr key={row.id} style={{ height: `${100 / (selectedRoster.sections?.reduce((acc, s) => acc + s.rows.length, 0) || 1)}%` }}>
+                                <tr key={row.id}>
                                    {dates.map((d, dIdx) => {
                                       const dStr = d.toISOString().split('T')[0];
                                       const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -1457,8 +1457,7 @@ export const RosterManager: React.FC = () => {
                                         <td 
                                           key={`${row.id}-${dStr}`} 
                                           rowSpan={isMerged ? sec.rows.length : 1}
-                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} align-middle overflow-hidden`}
-                                          style={{ height: '100%' }}
+                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} align-middle h-[45px]`}
                                           onClick={() => { if(isAdmin && !sdr) { setActiveSearchCell({date: dStr, period: cellPeriodId}); setIsSearchOpen(true); } }}
                                         >
                                            <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden leading-tight">

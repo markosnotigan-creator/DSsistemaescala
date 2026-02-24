@@ -65,8 +65,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   // Todo o resto (Adm, Ast) usa layout Grade Paisagem
   const isGrid = !isExtra && !isAmbOrPsi;
   
-  // PADRÃO AGORA É RETRATO PARA TODAS AS ESCALAS
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  // PADRÃO: PAISAGEM (LANDSCAPE) PARA TODAS AS ESCALAS
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
 
   const cleanHeaderTitle = (roster.headerTitle || settings.orgName || '').replace(/\s*\(TESTE CONEXÃO[^)]+\)/g, '');
 
@@ -167,15 +167,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     const s = item.soldier;
 
     if (h.includes('GRAD') || h.includes('POSTO')) return getAbbreviatedRank(s.rank);
-    if (h.includes('COMPLETO')) return <span className="text-[9px] font-bold text-left block pl-2">{s.fullName || s.name} {s.roleShort}</span>;
-    if (h.includes('NOME')) return <div className="text-left pl-2 font-bold uppercase truncate">{s.name} {s.roleShort}</div>;
+    if (h.includes('COMPLETO')) return <span className="text-left block pl-2 font-bold uppercase">{s.fullName || s.name}</span>;
+    if (h.includes('NOME')) return <div className="text-left pl-2 font-bold uppercase truncate">{s.name}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
     if (h === 'MAT' || h === 'MAT.' || h === 'NUM' || h === 'NUM.') return s.matricula || '-';
     if (h.includes('CEL') || h.includes('TEL')) return s.phone || '-';
-    if (h.includes('FUN') || h.includes('CARGO')) return <span className="text-[10px]">{s.role}</span>;
-    if (h.includes('SETOR') || h.includes('UNIDADE') || h.includes('LOTA')) return <span className="text-[10px]">{s.sector}</span>;
-    if (h.includes('SIT') || h.includes('STATUS')) return <span className="text-[9px] font-bold">{s.status}</span>;
+    if (h.includes('FUN') || h.includes('CARGO')) return <span>{s.role}</span>;
+    if (h.includes('SETOR') || h.includes('UNIDADE') || h.includes('LOTA')) return <span>{s.sector}</span>;
+    if (h.includes('SIT') || h.includes('STATUS')) return <span className="font-bold">{s.status}</span>;
     if (h === 'NR' || h === 'NR.' || h === 'OBS') {
         return item.shift.customData?.[colIndex] !== undefined ? item.shift.customData[colIndex] : (item.shift.note || '-');
     }
