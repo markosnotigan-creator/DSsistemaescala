@@ -1085,6 +1085,13 @@ export const RosterManager: React.FC = () => {
                        
                        {(selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_ast') && (
                          <div className="flex items-center space-x-4">
+                           <button 
+                             onClick={() => addRow(selectedRoster.sections.length > 0 ? selectedRoster.sections.length - 1 : 0)} 
+                             className="flex items-center space-x-1 text-[8pt] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded hover:bg-green-200 uppercase border border-green-200 shadow-sm"
+                           >
+                              <PlusCircle size={12}/> <span>Adicionar Linha</span>
+                           </button>
+
                            <label className="flex items-center space-x-2 cursor-pointer group">
                               <div 
                                 onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}

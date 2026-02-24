@@ -233,14 +233,14 @@ export const Personnel: React.FC = () => {
               className="bg-pm-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-pm-700 transition shadow"
             >
               <FileSpreadsheet size={20} />
-              <span>Importar (Excel)</span>
+              <span className="hidden md:inline">Importar</span>
             </button>
             <button 
               onClick={handleCreateNew}
               className="bg-gov-green text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700 transition shadow"
             >
               <Plus size={20} />
-              <span>Novo Militar</span>
+              <span className="hidden md:inline">Novo</span>
             </button>
           </div>
         )}

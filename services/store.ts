@@ -314,6 +314,16 @@ class StoreService {
     localStorage.setItem('admin_password', hashed);
   }
 
+  verifyRecoveryKey(key: string): boolean {
+    // Chave Mestra de Recuperação (Hardcoded para este ambiente, idealmente seria ENV)
+    const MASTER_KEY = "PMCE@2025";
+    return key === MASTER_KEY;
+  }
+
+  async resetAdminPassword(newPassword: string): Promise<void> {
+    await this.updateAdminPassword(newPassword);
+  }
+
   // --- DEBUG / TEST ---
   async testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
     if (!supabase) {
