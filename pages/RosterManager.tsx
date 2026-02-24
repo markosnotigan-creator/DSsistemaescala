@@ -1071,7 +1071,7 @@ export const RosterManager: React.FC = () => {
                    {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                 </header>
 
-                <div className="flex-1 border border-black overflow-hidden relative">
+                <div className="flex-1 border border-black overflow-auto relative">
                   {isAdmin && (
                     <div className="bg-gray-100 border-b border-black p-1 flex justify-end items-center space-x-4 no-print px-3">
                        {(selectedRoster.type !== 'cat_extra') && (
@@ -1116,7 +1116,7 @@ export const RosterManager: React.FC = () => {
                     </div>
                   )}
 
-                  <table className="w-full h-full border-collapse text-[8pt] table-fixed text-black">
+                  <table className="w-full min-h-full border-collapse text-[8pt] table-fixed text-black">
                      <thead>
                         <tr className="h-8">
                            <th className="border border-black bg-[#cbd5b0] p-1 w-32"></th>
