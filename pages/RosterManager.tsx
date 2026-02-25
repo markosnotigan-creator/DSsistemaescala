@@ -733,6 +733,18 @@ export const RosterManager: React.FC = () => {
     setRosters(prev => prev.map(r => r.id === updated.id ? updated : r));
   };
 
+  const toggleHoliday = (dateStr: string) => {
+    if (!selectedRoster) return;
+    const currentHolidays = selectedRoster.holidays || [];
+    let newHolidays;
+    if (currentHolidays.includes(dateStr)) {
+      newHolidays = currentHolidays.filter(h => h !== dateStr);
+    } else {
+      newHolidays = [...currentHolidays, dateStr];
+    }
+    updateRoster({ ...selectedRoster, holidays: newHolidays });
+  };
+
   const handleAutoSituation = () => {
     if (!selectedRoster) return;
     
@@ -1118,11 +1130,25 @@ export const RosterManager: React.FC = () => {
                      <thead>
                         <tr className="h-8">
                            <th className="border border-black bg-[#cbd5b0] p-1 w-32"></th>
-                           {dates.map(d => (
-                              <th key={d.toISOString()} className="border border-black bg-[#e4e9d6] p-1 text-center uppercase">
-                                 <div className="font-bold">{['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                              </th>
-                           ))}
+                           {dates.map(d => {
+                              const dStr = d.toISOString().split('T')[0];
+                              const isHoliday = selectedRoster.holidays?.includes(dStr);
+                              return (
+                                 <th key={d.toISOString()} className={`border border-black p-1 text-center uppercase relative group ${isHoliday ? 'bg-red-100' : 'bg-[#e4e9d6]'}`}>
+                                    <div className="font-bold">{['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                    {isHoliday && <div className="text-[7pt] text-red-600 font-black mt-0.5">FERIADO</div>}
+                                    {isAdmin && (
+                                        <button 
+                                            onClick={() => toggleHoliday(dStr)}
+                                            className="absolute top-0 right-0 p-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-bl shadow hover:bg-white transition-opacity"
+                                            title={isHoliday ? "Remover Feriado" : "Marcar como Feriado"}
+                                        >
+                                            <Calendar size={12} className={isHoliday ? "text-red-600" : "text-gray-400"} />
+                                        </button>
+                                    )}
+                                 </th>
+                              );
+                           })}
                         </tr>
                      </thead>
                      <tbody>
@@ -1167,6 +1193,18 @@ export const RosterManager: React.FC = () => {
                                     
                                     {dates.map(d => {
                                        const dStr = d.toISOString().split('T')[0];
+                                       const isHoliday = selectedRoster.holidays?.includes(dStr);
+                                       
+                                       if (isHoliday) {
+                                          return (
+                                             <td key={`${row.id}-${dStr}`} className="border border-black p-1 align-middle text-center bg-gray-100/50">
+                                                <div className="w-full h-full flex items-center justify-center min-h-[30px]">
+                                                    <span className="text-[7pt] font-black text-gray-300 select-none tracking-widest">FERIADO</span>
+                                                </div>
+                                             </td>
+                                          );
+                                       }
+
                                        const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === row.id);
                                        
                                        return (

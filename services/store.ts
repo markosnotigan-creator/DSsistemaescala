@@ -298,7 +298,13 @@ class StoreService {
 
       if (error) {
         console.error('Erro de autenticação:', error.message);
-        return { user: null, error: 'Senha incorreta ou usuário não autorizado.' };
+        if (error.message.includes("Invalid login credentials")) {
+             return { user: null, error: 'Credenciais inválidas. Se for o primeiro acesso, use "Esqueci a senha" com a Chave Mestra para criar a conta.' };
+        }
+        if (error.message.includes("Email not confirmed")) {
+             return { user: null, error: 'Email não confirmado. Verifique sua caixa de entrada.' };
+        }
+        return { user: null, error: 'Erro: ' + error.message };
       }
 
       if (data.user) {
@@ -365,8 +371,12 @@ class StoreService {
             // Mas para facilitar o "setup", vamos logar o erro.
             console.error("Erro ao criar/resetar usuário admin:", error.message);
             throw new Error(error.message.includes("already registered") 
-                ? "Usuário admin já existe. Use o painel do Supabase para resetar." 
+                ? "Usuário admin já existe. Se esqueceu a senha, use o painel do Supabase." 
                 : error.message);
+        }
+
+        if (data.user && !data.session) {
+             throw new Error("Usuário criado! Verifique seu email (" + email + ") para confirmar o cadastro antes de logar.");
         }
     }
   }

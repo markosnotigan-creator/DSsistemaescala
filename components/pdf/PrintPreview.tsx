@@ -333,11 +333,16 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        <thead>
                           <tr className="h-8">
                              <th className="border border-black bg-[#cbd5b0] p-1 w-32"></th>
-                             {dates.map(d => (
-                                <th key={d.toISOString()} className="border border-black bg-[#e4e9d6] p-1 text-center uppercase">
-                                   <div className="font-bold">{['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                                </th>
-                             ))}
+                             {dates.map(d => {
+                                const dStr = d.toISOString().split('T')[0];
+                                const isHoliday = roster.holidays?.includes(dStr);
+                                return (
+                                   <th key={d.toISOString()} className={`border border-black ${isHoliday ? 'bg-gray-200' : 'bg-[#e4e9d6]'} p-1 text-center uppercase`}>
+                                      <div className="font-bold">{['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                      {isHoliday && <div className="text-[6pt] font-black">FERIADO</div>}
+                                   </th>
+                                );
+                             })}
                           </tr>
                        </thead>
                        <tbody>
@@ -348,6 +353,18 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                 </td>
                                 {dates.map(d => {
                                    const dStr = d.toISOString().split('T')[0];
+                                   const isHoliday = roster.holidays?.includes(dStr);
+
+                                   if (isHoliday) {
+                                      return (
+                                         <td key={`${row.id}-${dStr}`} className="border border-black p-1 align-top text-center h-auto bg-gray-100">
+                                            <div className="flex flex-col space-y-1 h-full justify-center">
+                                                <span className="text-[6pt] font-bold text-gray-400 transform -rotate-45 block">FERIADO</span>
+                                            </div>
+                                         </td>
+                                      );
+                                   }
+
                                    const shiftsInCell = roster.shifts.filter(s => s.date === dStr && s.period === row.id);
                                    return (
                                       <td key={`${row.id}-${dStr}`} className="border border-black p-1 align-top text-center h-auto">
@@ -421,12 +438,17 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        <table className="w-full h-full table-fixed border-collapse">
                           <thead>
                             <tr className="h-6">
-                               {dates.map((d) => (
-                                  <th key={d.toISOString()} className="bg-[#e4e9d6] border border-black p-0 text-center w-[14.28%]">
-                                     <div className="font-black text-[7pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
-                                     <div className="text-[6pt] font-bold leading-none mt-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                                  </th>
-                               ))}
+                               {dates.map((d) => {
+                                  const dStr = d.toISOString().split('T')[0];
+                                  const isHoliday = roster.holidays?.includes(dStr);
+                                  return (
+                                     <th key={d.toISOString()} className={`${isHoliday ? 'bg-gray-200' : 'bg-[#e4e9d6]'} border border-black p-0 text-center w-[14.28%]`}>
+                                        <div className="font-black text-[7pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
+                                        <div className="text-[6pt] font-bold leading-none mt-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                        {isHoliday && <div className="text-[5pt] font-black mt-0.5">FERIADO</div>}
+                                     </th>
+                                  );
+                               })}
                             </tr>
                           </thead>
                           <tbody>
@@ -441,10 +463,23 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                       <tr key={row.id}>
                                          {dates.map((d) => {
                                             const dStr = d.toISOString().split('T')[0];
+                                            const isHoliday = roster.holidays?.includes(dStr);
                                             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                                             const isMerged = roster.mergeWeekendRows && isWeekend;
                                             
                                             if (isMerged && rIdx > 0) return null;
+
+                                            if (isHoliday) {
+                                                return (
+                                                  <td 
+                                                    key={`${row.id}-${dStr}`} 
+                                                    rowSpan={isMerged ? sec.rows.length : 1}
+                                                    className="border border-black p-0 text-center align-middle h-auto bg-gray-100"
+                                                  >
+                                                     <span className="text-[6pt] font-bold text-gray-400 transform -rotate-45 block">FERIADO</span>
+                                                  </td>
+                                                );
+                                            }
 
                                             const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
                                             const shift = roster.shifts.find(s => s.date === dStr && s.period === cellPeriodId);
