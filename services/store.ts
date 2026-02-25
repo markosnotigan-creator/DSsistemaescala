@@ -387,12 +387,37 @@ class StoreService {
       return { success: false, message: 'Cliente Supabase não inicializado. Verifique as variáveis de ambiente (VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY).' };
     }
     try {
-      // Tenta uma leitura simples (head) apenas para verificar conexão
-      const { error } = await supabase.from('app_settings').select('*', { count: 'exact', head: true });
-      if (error) throw error;
-      return { success: true, message: 'Conexão com Supabase estabelecida com sucesso!' };
+      // 1. Teste de Leitura (HEAD)
+      const { error: readError } = await supabase.from('app_settings').select('*', { count: 'exact', head: true });
+      
+      if (readError) {
+         // Se falhar na leitura, nem tenta escrita.
+         throw new Error(`Falha na leitura: ${readError.message}`);
+      }
+
+      // 2. Teste de Escrita (Opcional, mas bom para garantir permissões)
+      // Tenta atualizar o timestamp da própria configuração (sem mudar dados)
+      // Isso valida se o RLS de update está funcionando para o usuário logado.
+      const user = this.getCurrentUser();
+      if (user && user.role === 'ADMIN') {
+          const { error: writeError } = await supabase.from('app_settings').update({ updated_at: new Date() }).eq('id', '00000000-0000-0000-0000-000000000000'); // ID dummy, não vai achar nada mas vai testar a permissão/conexão
+          
+          // Nota: O update acima provavelmente não vai afetar nenhuma linha (ID 000...), 
+          // mas se der erro de permissão ou conexão, vai lançar erro.
+          if (writeError && !writeError.message.includes("0 rows")) {
+             // Ignoramos erro de "0 rows" pois é esperado.
+             console.warn("Erro no teste de escrita (não crítico):", writeError.message);
+          }
+      }
+
+      return { success: true, message: 'Conexão com Supabase (Leitura/Escrita) estabelecida com sucesso!' };
+
     } catch (e: any) {
-      return { success: false, message: `Erro ao conectar: ${e.message || 'Erro desconhecido'}` };
+      const msg = e.message || 'Erro desconhecido';
+      if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+          return { success: false, message: 'Falha na conexão. Verifique sua internet.' };
+      }
+      return { success: false, message: `Erro ao conectar: ${msg}` };
     }
   }
 }

@@ -145,8 +145,10 @@ export const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset input value to allow selecting the same file again if needed
+    e.target.value = '';
+
     if (!confirm("ATENÇÃO CRÍTICA:\n\nAo restaurar este backup, TODOS os dados atuais (militares, escalas e configurações) serão SUBSTITUÍDOS pelos dados do arquivo.\n\nDeseja realmente continuar?")) {
-      e.target.value = ''; // Reset input
       return;
     }
 
@@ -156,11 +158,21 @@ export const Settings: React.FC = () => {
         const content = event.target?.result as string;
         const data = JSON.parse(content);
 
-        if (data.soldiers) localStorage.setItem('soldiers', data.soldiers);
-        if (data.rosters) localStorage.setItem('rosters', data.rosters);
-        if (data.app_settings) localStorage.setItem('app_settings', data.app_settings);
-        if (data.admin_password) localStorage.setItem('admin_password', data.admin_password);
-        if (data.extra_duty_history) localStorage.setItem('extra_duty_history', data.extra_duty_history);
+        // Helper para salvar no localStorage, tratando se é string (formato antigo/padrão) ou objeto (json puro)
+        const saveToLocal = (key: string, value: any) => {
+            if (value === undefined || value === null) return;
+            if (typeof value === 'string') {
+                localStorage.setItem(key, value);
+            } else {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+        };
+
+        saveToLocal('soldiers', data.soldiers);
+        saveToLocal('rosters', data.rosters);
+        saveToLocal('app_settings', data.app_settings);
+        saveToLocal('admin_password', data.admin_password);
+        saveToLocal('extra_duty_history', data.extra_duty_history);
 
         alert("Backup restaurado com sucesso! O sistema será recarregado.");
         window.location.reload();
