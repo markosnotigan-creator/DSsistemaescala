@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Roster, Rank } from '../../types';
 import { db } from '../../services/store';
+import { getHolidayName } from '../../utils';
 import { Printer, Download, Loader2, FileText, ZoomIn, ZoomOut, Monitor, RotateCw } from 'lucide-react';
 
 interface PrintPreviewProps {
@@ -253,9 +254,6 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           <button onClick={handleDownloadPDF} disabled={isGenerating} className="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded font-bold flex items-center text-xs shadow-md transition uppercase">
             {isGenerating ? <Loader2 className="animate-spin mr-1" size={14}/> : <Download className="mr-1" size={14}/>} <span className="hidden sm:inline">PDF</span>
           </button>
-          <button onClick={() => window.print()} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded font-bold flex items-center text-xs shadow-md transition uppercase">
-            <Printer className="mr-1" size={14}/> <span className="hidden sm:inline">Imprimir</span>
-          </button>
         </div>
       </div>
 
@@ -355,11 +353,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                    const dStr = d.toISOString().split('T')[0];
                                    const isHoliday = roster.holidays?.includes(dStr);
 
-                                   if (isHoliday) {
+                                   const isOptional = roster.optionalHolidays?.includes(dStr);
+
+                                   if (isHoliday || isOptional) {
                                       return (
-                                         <td key={`${row.id}-${dStr}`} className="border border-black p-1 align-top text-center h-auto bg-gray-100">
+                                         <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center h-auto ${isHoliday ? 'bg-gray-100' : 'bg-blue-50'}`}>
                                             <div className="flex flex-col space-y-1 h-full justify-center">
-                                                <span className="text-[6pt] font-bold text-gray-400 transform -rotate-45 block">FERIADO</span>
+                                                <span className={`text-[6pt] font-bold ${isHoliday ? 'text-gray-400' : 'text-blue-400'} transform -rotate-45 block`}>
+                                                   {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
+                                                </span>
                                             </div>
                                          </td>
                                       );
@@ -440,12 +442,30 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             <tr className="h-6">
                                {dates.map((d) => {
                                   const dStr = d.toISOString().split('T')[0];
-                                  const isHoliday = roster.holidays?.includes(dStr);
+                                  const isAmbulancia = roster.type === 'cat_amb';
+                                  const isHoliday = !isAmbulancia && roster.holidays?.includes(dStr);
+                                  const isOptional = !isAmbulancia && roster.optionalHolidays?.includes(dStr);
+                                  
+                                  let bgClass = 'bg-[#e4e9d6]';
+                                  if (isHoliday) bgClass = 'bg-gray-200';
+                                  if (isOptional) bgClass = 'bg-gray-100';
+
                                   return (
-                                     <th key={d.toISOString()} className={`${isHoliday ? 'bg-gray-200' : 'bg-[#e4e9d6]'} border border-black p-0 text-center w-[14.28%]`}>
+                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center w-[14.28%]`}>
                                         <div className="font-black text-[7pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
                                         <div className="text-[6pt] font-bold leading-none mt-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                                        {isHoliday && <div className="text-[5pt] font-black mt-0.5">FERIADO</div>}
+                                        {isHoliday && (
+                                           <div className="mt-0.5 bg-gray-800 text-white text-[5.5pt] font-black py-0.5 px-0.5 rounded leading-none">
+                                              FERIADO<br/>
+                                              <span className="text-[4.5pt]">{getHolidayName(dStr) || ''}</span>
+                                           </div>
+                                        )}
+                                        {isOptional && (
+                                           <div className="mt-0.5 bg-gray-600 text-white text-[5.5pt] font-black py-0.5 px-0.5 rounded leading-none">
+                                              FACULTATIVO<br/>
+                                              <span className="text-[4.5pt]">{getHolidayName(dStr) || ''}</span>
+                                           </div>
+                                        )}
                                      </th>
                                   );
                                })}

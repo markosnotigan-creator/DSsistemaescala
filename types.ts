@@ -146,6 +146,7 @@ export interface Roster {
   mergeWeekendRows?: boolean; // Mesclar linhas nos finais de semana
   hidePhone?: boolean; // Ocultar telefone na impressão
   holidays?: string[]; // Lista de datas que são feriados
+  optionalHolidays?: string[]; // Lista de datas que são ponto facultativo
 }
 
 export interface AppSettings {

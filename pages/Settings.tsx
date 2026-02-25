@@ -153,31 +153,17 @@ export const Settings: React.FC = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target?.result as string;
         const data = JSON.parse(content);
 
-        // Helper para salvar no localStorage, tratando se é string (formato antigo/padrão) ou objeto (json puro)
-        const saveToLocal = (key: string, value: any) => {
-            if (value === undefined || value === null) return;
-            if (typeof value === 'string') {
-                localStorage.setItem(key, value);
-            } else {
-                localStorage.setItem(key, JSON.stringify(value));
-            }
-        };
-
-        saveToLocal('soldiers', data.soldiers);
-        saveToLocal('rosters', data.rosters);
-        saveToLocal('app_settings', data.app_settings);
-        saveToLocal('admin_password', data.admin_password);
-        saveToLocal('extra_duty_history', data.extra_duty_history);
+        await db.restoreBackup(data);
 
         alert("Backup restaurado com sucesso! O sistema será recarregado.");
         window.location.reload();
       } catch (err) {
-        alert("Erro ao ler arquivo de backup. Certifique-se que é um arquivo .json válido gerado por este sistema.");
+        alert("Erro ao ler arquivo de backup ou sincronizar. Certifique-se que é um arquivo .json válido.");
         console.error(err);
       }
     };

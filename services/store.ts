@@ -381,6 +381,83 @@ class StoreService {
     }
   }
 
+  // --- BACKUP / RESTORE ---
+
+  async restoreBackup(data: any): Promise<void> {
+    // 1. Restore to LocalStorage
+    const saveToLocal = (key: string, value: any) => {
+        if (value === undefined || value === null) return;
+        if (typeof value === 'string') {
+            localStorage.setItem(key, value);
+        } else {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+    };
+
+    saveToLocal('soldiers', data.soldiers);
+    saveToLocal('rosters', data.rosters);
+    saveToLocal('app_settings', data.app_settings);
+    saveToLocal('admin_password', data.admin_password);
+    saveToLocal('extra_duty_history', data.extra_duty_history);
+
+    // 2. If Supabase is connected, we MUST push this restored data to the server
+    // to prevent the server from overwriting it with old data on next sync.
+    if (supabase) {
+        try {
+            // Helper to push data if it exists
+            const pushData = async (table: string, key: string) => {
+                const localData = this.getLocal(key);
+                if (!localData) return;
+
+                // For simplicity, we delete all rows and re-insert. 
+                // This is drastic but ensures the backup state is exactly replicated.
+                // However, RLS might prevent delete all.
+                // Let's try to upsert row by row or use the 'data' column approach we have.
+                
+                // Since our schema uses a single 'data' column per row (document store style),
+                // we can iterate and upsert.
+                
+                const items = Array.isArray(localData) ? localData : [localData];
+                
+                for (const item of items) {
+                    // Assuming item has an ID. If not (like settings), we use a fixed ID or similar logic.
+                    if (table === 'app_settings') {
+                         await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                         await supabase.from(table).insert({ data: item });
+                    } else {
+                         // For arrays (soldiers, rosters), we try to upsert based on ID if possible
+                         // But since we don't have a unique constraint on data->>id, we might duplicate if we just insert.
+                         // So we check existence first.
+                         const id = item.id;
+                         if (id) {
+                             // This is slow but safe for restoration
+                             const { data: existing } = await supabase.from(table).select('id').eq('data->>id', id).maybeSingle();
+                             if (existing) {
+                                 await supabase.from(table).update({ data: item, updated_at: new Date() }).eq('id', existing.id);
+                             } else {
+                                 await supabase.from(table).insert({ data: item });
+                             }
+                         }
+                    }
+                }
+            };
+
+            await pushData('soldiers', 'soldiers');
+            await pushData('rosters', 'rosters');
+            await pushData('app_settings', 'app_settings');
+            await pushData('extra_duty_history', 'extra_duty_history');
+            
+            console.log("Backup synced to Supabase successfully.");
+
+        } catch (err) {
+            console.error("Error syncing backup to Supabase:", err);
+            // We don't throw here because local restore succeeded.
+            // But we should warn the user.
+            alert("Backup restaurado localmente, mas houve erro ao sincronizar com a nuvem. Verifique sua conexão.");
+        }
+    }
+  }
+
   // --- DEBUG / TEST ---
   async testSupabaseConnection(): Promise<{ success: boolean; message: string }> {
     if (!supabase) {
