@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Roster, Rank } from '../../types';
 import { db } from '../../services/store';
@@ -172,7 +171,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     if (h.includes('NOME')) return <div className="text-left pl-2 uppercase truncate">{s.name}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
-    if (h === 'MAT' || h === 'MAT.' || h === 'NUM' || h === 'NUM.') return s.matricula || '-';
+    if (h === 'MAT' || h.includes('MAT.') || h === 'NUM' || h.includes('NUM.')) return s.matricula || '-';
     if (h.includes('CEL') || h.includes('TEL')) return s.phone || '-';
     if (h.includes('FUN') || h.includes('CARGO')) return <span>{s.role}</span>;
     if (h.includes('SETOR') || h.includes('UNIDADE') || h.includes('LOTA')) return <span>{s.sector}</span>;
@@ -183,7 +182,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     return item.shift.customData?.[colIndex.toString()] || '-';
   };
 
-  const containerClass = "w-[297mm] h-[210mm] overflow-hidden";
+  const containerClass = "w-[297mm] min-h-[210mm] bg-white";
 
   return (
     <div className="fixed inset-0 bg-gray-900/95 z-50 overflow-hidden no-print flex flex-col backdrop-blur-sm animate-in fade-in duration-200">
@@ -210,25 +209,25 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           }
           html, body { 
             width: 297mm;
-            height: 210mm;
+            height: auto !important;
+            min-height: 210mm;
             margin: 0 !important; 
             padding: 0 !important;
-            overflow: hidden !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
             background: white !important; 
           }
           #roster-pdf-content { 
             width: 100% !important; 
-            height: 100% !important; 
+            height: auto !important;
+            min-height: 100% !important;
             box-shadow: none !important; 
             margin: 0 !important;
             padding: 5mm !important;
             transform: scale(0.98) !important;
             transform-origin: top center !important;
-            page-break-inside: avoid;
-            page-break-after: avoid;
-            overflow: hidden !important;
+            overflow: visible !important;
             display: flex !important;
             flex-direction: column !important;
           }
@@ -264,10 +263,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
         >
           {isExtra ? (
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '5mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-                <div className="h-full flex flex-col overflow-hidden">
+                <div className="flex flex-col min-h-full">
                     <header className="flex justify-between items-start mb-4 h-16 relative w-full flex-shrink-0">
-                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}
-                        <div className="flex-1"></div>
+                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}<div className="flex-1"></div>
                         {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="Gov" />}
                     </header>
                     <div className="text-center mb-2 flex-shrink-0">
@@ -276,7 +274,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                     <div className="mb-2 text-[9pt] text-left flex-shrink-0">
                         <span className="font-bold">APRESENTAÇÃO:</span> <span className="uppercase">{roster.observations}</span>
                     </div>
-                    <div className="flex-1 overflow-hidden relative">
+                    <div className="flex-1 relative">
                         <table className="w-full border-collapse border border-black text-[11pt] table-auto">
                             <thead>
                               <tr className="bg-[#e6e6e6]">
@@ -313,7 +311,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             </div>
           ) : isGrid ? (
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '5mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-               <div className="h-full flex flex-col overflow-hidden">
+               <div className="flex flex-col min-h-full">
                   <header className="text-center mb-2 flex flex-col justify-center border-b border-black/20 pb-1 relative h-16 flex-shrink-0">
                      {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                      <div className="mx-20">
@@ -326,7 +324,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                      </div>
                      {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
                   </header>
-                  <div className="flex-1 border border-black overflow-hidden relative">
+                  <div className="flex-1 border border-black relative">
                     <table className="w-full h-full border-collapse text-[8pt] table-fixed">
                        <thead>
                           <tr className="h-8">
@@ -379,7 +377,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                   <div key={i} className="text-[7pt] font-bold uppercase leading-tight">
                                                      <div>{getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort} {legend && <span className="ml-0.5 text-blue-800 font-black">{legend}</span>}</div>
                                                      {!row.hidePhone && !roster.hidePhone && sdr.phone && (
-                                                        <div className="text-[6pt] text-gray-500 font-medium leading-none mt-0.5">{sdr.phone}</div>
+                                                        <div className="text-[7.5pt] text-gray-600 font-bold leading-none mt-0.5">{sdr.phone}</div>
                                                      )}
                                                   </div>
                                                ) : null;
@@ -416,7 +414,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
             </div>
           ) : (
             <div id="roster-pdf-content" className={containerClass} style={{ padding: '5mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-                <div className="h-full flex flex-col overflow-hidden">
+                <div className="flex flex-col min-h-full">
                     <header className="text-center mb-1 relative h-16 flex items-center justify-center flex-shrink-0">
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                        <div className="mx-16 w-full">
@@ -436,8 +434,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             {roster.subTitle}
                         </div>
                     )}
-                    <div className="flex-1 border border-black relative flex flex-col overflow-hidden">
-                       <table className="w-full h-full table-fixed border-collapse">
+                    <div className="flex-1 border border-black relative flex flex-col">
+                       <table className="w-full table-fixed border-collapse">
                           <thead>
                             <tr className="h-6">
                                {dates.map((d) => {
@@ -468,7 +466,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                         )}
                                      </th>
                                   );
-                               })}
+                                })}
                             </tr>
                           </thead>
                           <tbody>
@@ -502,28 +500,33 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                             }
 
                                             const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
-                                            const shift = roster.shifts.find(s => s.date === dStr && s.period === cellPeriodId);
-                                            const sdr = shift ? allSoldiers.find(s => s.id === shift.soldierId) : null;
-                                            const legend = shift?.note || '';
+                                            const shiftsInCell = roster.shifts.filter(s => s.date === dStr && s.period === cellPeriodId);
+                                            
                                             return (
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className="border border-black p-0 text-center align-middle h-auto"
+                                                className="border border-black p-0 text-center align-middle h-auto vertical-align-top" // Adicionado vertical-align-top
                                               >
-                                                 {sdr ? (
-                                                    <div className="flex flex-col items-center justify-center w-full h-full leading-none px-0.5 py-0.5">
-                                                       <div className="text-[8.5pt] font-bold uppercase text-center w-full break-words tracking-tight leading-tight">
-                                                         {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
-                                                       </div>
-                                                       {!roster.hidePhone && (
-                                                         <div className="text-[8.5pt] font-bold text-gray-600 mt-0.5 leading-tight">{sdr.phone || '-'}</div>
-                                                       )}
-                                                       {legend && (
-                                                         <div className="text-[7pt] font-black text-blue-800 mt-0.5 scale-90 leading-tight">{legend}</div>
-                                                       )}
-                                                    </div>
-                                                 ) : <span className="text-[6pt] text-gray-300">-</span>}
+                                                 <div className="flex flex-col items-center justify-start w-full h-full leading-none px-0.5 py-0.5">
+                                                    {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
+                                                       const sdr = allSoldiers.find(s => s.id === shift.soldierId);
+                                                       const legend = shift?.note || '';
+                                                       return sdr ? (
+                                                          <div key={i} className="flex flex-col items-center justify-center w-full leading-none mb-1 last:mb-0">
+                                                             <div className="text-[8.5pt] font-bold uppercase text-center w-full break-words tracking-tight leading-tight">
+                                                                {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
+                                                             </div>
+                                                             {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
+                                                                <div className="text-[8.5pt] font-bold text-gray-600 mt-0.5 leading-tight">{sdr.phone || '-'}</div>
+                                                             )}
+                                                             {legend && (
+                                                                <div className="text-[7pt] font-black text-blue-800 mt-0.5 scale-90 leading-tight">{legend}</div>
+                                                             )}
+                                                          </div>
+                                                       ) : null;
+                                                    }) : <span className="text-[6pt] text-gray-300">-</span>}
+                                                 </div>
                                               </td>
                                             );
                                          })}

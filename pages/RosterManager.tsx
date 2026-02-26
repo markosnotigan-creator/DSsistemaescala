@@ -791,10 +791,21 @@ export const RosterManager: React.FC = () => {
   const handleAutoSituation = () => {
     if (!selectedRoster) return;
     
-    const notActiveSoldiers = soldiers.filter(s => s.status !== Status.ATIVO);
+    // Filtra apenas militares que não estão ativos E que pertencem ao setor da escala atual
+    const notActiveSoldiers = soldiers.filter(s => {
+      if (s.status === Status.ATIVO) return false;
+      
+      const soldierSector = s.sector?.toLowerCase() || '';
+      const categoryName = activeCategory.name.toLowerCase();
+      
+      // Verifica igualdade ou inclusão para maior flexibilidade (ex: "Odontologia" vs "Odontologia Clínica")
+      return soldierSector === categoryName || 
+             soldierSector.includes(categoryName) || 
+             categoryName.includes(soldierSector);
+    });
     
     if (notActiveSoldiers.length === 0) {
-      alert("Nenhum militar com status de afastamento ou alteração (Férias, Licença, Folga, etc) encontrado.");
+      alert(`Nenhum militar do setor "${activeCategory.name}" com status de afastamento ou alteração encontrado.`);
       return;
     }
 
@@ -1106,7 +1117,7 @@ export const RosterManager: React.FC = () => {
                 </div>
              </div>
           </div>
-        ) : (selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_ast') ? (
+        ) : (selectedRoster.type === 'cat_adm') ? (
           <div className="flex-1 overflow-auto bg-gray-200/80 dark:bg-slate-900 flex justify-center p-8 rounded-lg border-inner shadow-inner">
              {/* ESCALA GENÉRICA (A4 PAISAGEM) - Mantém BG White e Text Black */}
              <div className="w-[297mm] min-h-[210mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '10mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
@@ -1445,10 +1456,10 @@ export const RosterManager: React.FC = () => {
                     />
                 </div>
 
-                <div className="flex-1 border border-black overflow-hidden relative">
+                <div className="flex-1 border border-black overflow-auto relative">
                   {isAdmin && (
                     <div className="bg-gray-100 border-b border-black p-1 flex justify-end space-x-2 no-print">
-                       {(selectedRoster.type === 'cat_amb' || selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_odo') && (
+                       {(selectedRoster.type === 'cat_amb' || selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_odo' || selectedRoster.type === 'cat_ast') && (
                            <button 
                              onClick={() => setIsAutoModalOpen(true)}
                              className="flex items-center space-x-1 text-[8pt] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded hover:bg-purple-200 uppercase mr-auto border border-purple-200 shadow-sm"
@@ -1481,7 +1492,7 @@ export const RosterManager: React.FC = () => {
                          </div>
                        )}
 
-                       {(selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_odo') && (
+                       {(selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_odo' || selectedRoster.type === 'cat_ast') && (
                          <label className="flex items-center space-x-2 cursor-pointer group mr-4">
                             <div 
                               onClick={() => updateRoster({...selectedRoster, hideWeekends: !selectedRoster.hideWeekends})}
@@ -1561,58 +1572,78 @@ export const RosterManager: React.FC = () => {
                                       if (isMerged && rIdx > 0) return null;
 
                                       const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
-                                      const shift = selectedRoster.shifts.find(s => s.date === dStr && s.period === cellPeriodId);
-                                      const sdr = shift ? soldiers.find(s => s.id === shift.soldierId) : null;
-                                      const shiftId = shift ? `${shift.date}-${shift.period}-${shift.soldierId}` : '';
-                                      const legend = shift?.note || "";
-
+                                      const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === cellPeriodId);
+                                      
                                       return (
                                         <td 
                                           key={`${row.id}-${dStr}`} 
                                           rowSpan={isMerged ? sec.rows.length : 1}
                                           className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} align-middle h-[45px]`}
-                                          onClick={() => { if(isAdmin && !sdr) { setActiveSearchCell({date: dStr, period: cellPeriodId}); setIsSearchOpen(true); } }}
+                                          onClick={() => { 
+                                              if(isAdmin) {
+                                                  const isMultiAdd = ['cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster.type);
+                                                  if (isMultiAdd || shiftsInCell.length === 0) {
+                                                      setActiveSearchCell({date: dStr, period: cellPeriodId}); 
+                                                      setIsSearchOpen(true); 
+                                                  }
+                                              } 
+                                          }}
                                         >
-                                           <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden leading-tight">
-                                             {sdr ? (
-                                               <div className="w-full relative group/item text-black">
-                                                 <div className="text-[9pt] font-bold text-center leading-none uppercase truncate w-full px-0.5">
-                                                   {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
-                                                 </div>
-                                                 <div className="text-[7pt] text-center mt-0.5 font-bold text-gray-600 leading-none">
-                                                    {sdr.phone || '-'}
-                                                 </div>
-                                                 <div className="text-[7pt] text-center mt-0.5 font-black text-blue-800 leading-none min-h-[8px]">
-                                                    {isAdmin && editingLegendId === shiftId ? (
-                                                       <input 
-                                                         autoFocus
-                                                         className="w-12 bg-white border border-blue-500 rounded text-blue-900 px-0.5 outline-none font-black text-center"
-                                                         defaultValue={legend}
-                                                         onClick={e => e.stopPropagation()}
-                                                         onBlur={e => updateShiftNote(shift!, e.target.value)}
-                                                         onKeyDown={e => e.key === 'Enter' && updateShiftNote(shift!, (e.target as HTMLInputElement).value)}
-                                                       />
-                                                    ) : (
-                                                       <span 
-                                                         onClick={(e) => { e.stopPropagation(); if(isAdmin) setEditingLegendId(shiftId); }}
-                                                         className={`${isAdmin ? 'cursor-pointer' : ''} ${legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden')}`}
-                                                       >
-                                                          {legend || '(+)'}
-                                                       </span>
-                                                    )}
-                                                 </div>
+                                           <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden leading-tight space-y-1">
+                                             {shiftsInCell.map((shift, idx) => {
+                                                const sdr = soldiers.find(s => s.id === shift.soldierId);
+                                                if (!sdr) return null;
+                                                const shiftId = `${shift.date}-${shift.period}-${shift.soldierId}`;
+                                                const legend = shift.note || "";
 
-                                                 {isAdmin && (
-                                                    <button 
-                                                      onClick={(e) => { e.stopPropagation(); removeShiftFromCell(shift); }}
-                                                      className="absolute -right-1 -top-1 text-red-500 opacity-0 group-hover/item:opacity-100 bg-white rounded-full p-0.5 shadow-sm"
-                                                    >
-                                                       <CloseIcon size={8}/>
-                                                    </button>
-                                                 )}
-                                               </div>
-                                             ) : (
+                                                return (
+                                                   <div key={idx} className="w-full relative group/item text-black">
+                                                     <div className="text-[9pt] font-bold text-center leading-none uppercase truncate w-full px-0.5">
+                                                       {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
+                                                     </div>
+                                                     <div className="text-[7pt] text-center mt-0.5 font-bold text-gray-600 leading-none">
+                                                        {sdr.phone || '-'}
+                                                     </div>
+                                                     <div className="text-[7pt] text-center mt-0.5 font-black text-blue-800 leading-none min-h-[8px]">
+                                                        {isAdmin && editingLegendId === shiftId ? (
+                                                           <input 
+                                                             autoFocus
+                                                             className="w-12 bg-white border border-blue-500 rounded text-blue-900 px-0.5 outline-none font-black text-center"
+                                                             defaultValue={legend}
+                                                             onClick={e => e.stopPropagation()}
+                                                             onBlur={e => updateShiftNote(shift, e.target.value)}
+                                                             onKeyDown={e => e.key === 'Enter' && updateShiftNote(shift, (e.target as HTMLInputElement).value)}
+                                                           />
+                                                        ) : (
+                                                           <span 
+                                                             onClick={(e) => { e.stopPropagation(); if(isAdmin) setEditingLegendId(shiftId); }}
+                                                             className={`${isAdmin ? 'cursor-pointer' : ''} ${legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden')}`}
+                                                           >
+                                                              {legend || '(+)'}
+                                                           </span>
+                                                        )}
+                                                     </div>
+   
+                                                     {isAdmin && (
+                                                        <button 
+                                                          onClick={(e) => { e.stopPropagation(); removeShiftFromCell(shift); }}
+                                                          className="absolute -right-1 -top-1 text-red-500 opacity-0 group-hover/item:opacity-100 bg-white rounded-full p-0.5 shadow-sm"
+                                                        >
+                                                           <CloseIcon size={8}/>
+                                                        </button>
+                                                     )}
+                                                   </div>
+                                                );
+                                             })}
+                                             
+                                             {shiftsInCell.length === 0 && (
                                                 <span className={`text-gray-200 text-[8pt] ${isAdmin ? 'opacity-0 group-hover:opacity-100' : 'hidden'}`}>+</span>
+                                             )}
+                                             
+                                             {shiftsInCell.length > 0 && ['cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster.type) && isAdmin && (
+                                                 <div className="opacity-0 group-hover:opacity-100">
+                                                     <PlusCircle size={10} className="text-green-500 mx-auto" />
+                                                 </div>
                                              )}
                                            </div>
                                            
@@ -1819,7 +1850,7 @@ export const RosterManager: React.FC = () => {
                       onClick={() => {
                         if (selectedRoster?.type === 'cat_extra') {
                           handleAddSoldierToExtra(s.id);
-                        } else if (selectedRoster?.type === 'cat_adm' && activeSearchCell) {
+                        } else if (['cat_adm', 'cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster?.type || '') && activeSearchCell) {
                           addShiftToCell(activeSearchCell.date, activeSearchCell.period, s.id);
                         } else if (activeSearchCell) {
                           updateShift(activeSearchCell.date, activeSearchCell.period, s.id);

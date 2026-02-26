@@ -426,7 +426,13 @@ export const Dashboard: React.FC = () => {
               members24 = soldiers.filter(s => s.team === currentTeam24Info.name && s.status === 'Ativo');
            }
            if (members2x2.length === 0) {
-              members2x2 = soldiers.filter(s => s.team === currentTeam2x2Info.name && s.status === 'Ativo');
+              // Fix: Ensure we don't include soldiers who are actually in the 24h team (e.g. ALFA/BRAVO mapped to TURMA 01)
+              // This prevents 1ºSgt Fernandes (ALFA/TURMA 01) from appearing in 2x2 (TURMA 01)
+              members2x2 = soldiers.filter(s => 
+                  s.team === currentTeam2x2Info.name && 
+                  s.status === 'Ativo' &&
+                  s.team !== currentTeam24Info.name // Exclude if their team matches the current 24h team name
+              );
            }
 
         } else {
@@ -435,8 +441,23 @@ export const Dashboard: React.FC = () => {
            isTheoretical = true;
 
            members24 = soldiers.filter(s => s.team === currentTeam24Info.name && s.status === 'Ativo');
-           members2x2 = soldiers.filter(s => s.team === currentTeam2x2Info.name && s.status === 'Ativo');
+           
+           // Fix: Same protection for the static calculation fallback
+           members2x2 = soldiers.filter(s => 
+               s.team === currentTeam2x2Info.name && 
+               s.status === 'Ativo' &&
+               s.team !== currentTeam24Info.name
+           );
         }
+    }
+
+    // --- CORREÇÃO DE SEGURANÇA: FILTRO ESTRITO DE EQUIPES ---
+    // Garante que militares da TURMA 01 (ou ALFA/BRAVO) NUNCA apareçam na TURMA 02
+    // e vice-versa, independente da projeção ou configuração de ciclo.
+    if (currentTeam2x2Info.name === 'TURMA 02') {
+        members2x2 = members2x2.filter(s => !['TURMA 01', 'ALFA', 'BRAVO'].includes(s.team || ''));
+    } else if (currentTeam2x2Info.name === 'TURMA 01') {
+        members2x2 = members2x2.filter(s => !['TURMA 02', 'CHARLIE', 'DELTA'].includes(s.team || ''));
     }
 
     setSimResult({ 
