@@ -1628,7 +1628,7 @@ export const RosterManager: React.FC = () => {
                                         <td 
                                           key={`${row.id}-${dStr}`} 
                                           rowSpan={isMerged ? sec.rows.length : 1}
-                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} align-middle h-[45px]`}
+                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} ${selectedRoster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-[45px]`}
                                           onClick={() => { 
                                               if(isAdmin) {
                                                   const isMultiAdd = ['cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster.type);
@@ -1639,7 +1639,7 @@ export const RosterManager: React.FC = () => {
                                               } 
                                           }}
                                         >
-                                           <div className="flex flex-col items-center justify-center w-full h-full overflow-hidden leading-tight space-y-1">
+                                           <div className={`flex flex-col items-center ${selectedRoster.type === 'cat_odo' ? 'justify-start pt-1' : 'justify-center'} w-full h-full overflow-hidden leading-tight space-y-1`}>
                                              {shiftsInCell.map((shift, idx) => {
                                                 const sdr = soldiers.find(s => s.id === shift.soldierId);
                                                 if (!sdr) return null;

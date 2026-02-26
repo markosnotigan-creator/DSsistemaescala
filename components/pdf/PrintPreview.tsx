@@ -355,9 +355,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
 
                                    if (isHoliday || isOptional) {
                                       return (
-                                         <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center h-auto ${isHoliday ? 'bg-gray-100' : 'bg-blue-50'}`}>
+                                         <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-middle text-center h-auto ${isHoliday ? 'bg-gray-100' : 'bg-blue-50'}`}>
                                             <div className="flex flex-col space-y-1 h-full justify-center">
-                                                <span className={`text-[6pt] font-bold ${isHoliday ? 'text-gray-400' : 'text-blue-400'} transform -rotate-45 block`}>
+                                                <span className={`text-[7pt] font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`}>
                                                    {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
                                                 </span>
                                             </div>
@@ -482,19 +482,22 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                          {dates.map((d) => {
                                             const dStr = d.toISOString().split('T')[0];
                                             const isHoliday = roster.holidays?.includes(dStr);
+                                            const isOptional = roster.optionalHolidays?.includes(dStr);
                                             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                                             const isMerged = roster.mergeWeekendRows && isWeekend;
                                             
                                             if (isMerged && rIdx > 0) return null;
 
-                                            if (isHoliday) {
+                                            if (isHoliday || isOptional) {
                                                 return (
                                                   <td 
                                                     key={`${row.id}-${dStr}`} 
                                                     rowSpan={isMerged ? sec.rows.length : 1}
-                                                    className="border border-black p-0 text-center align-middle h-auto bg-gray-100"
+                                                    className={`border border-black p-0 text-center align-middle h-auto ${isHoliday ? 'bg-red-50' : 'bg-blue-50'}`}
                                                   >
-                                                     <span className="text-[6pt] font-bold text-gray-400 transform -rotate-45 block">FERIADO</span>
+                                                     <span className={`text-[7pt] font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`}>
+                                                        {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
+                                                     </span>
                                                   </td>
                                                 );
                                             }
@@ -506,9 +509,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className="border border-black p-0 text-center align-middle h-auto vertical-align-top" // Adicionado vertical-align-top
+                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-auto`}
                                               >
-                                                 <div className="flex flex-col items-center justify-start w-full h-full leading-none px-0.5 py-0.5">
+                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' ? 'justify-start pt-1' : 'justify-center'} w-full h-full leading-none px-0.5 py-0.5`}>
                                                     {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
                                                        const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                        const legend = shift?.note || '';
