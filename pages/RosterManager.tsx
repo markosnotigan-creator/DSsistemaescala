@@ -1214,7 +1214,7 @@ export const RosterManager: React.FC = () => {
                                           <span className="text-[7pt]">{getHolidayName(dStr) || ''}</span>
                                        </div>
                                     )}
-                                    {isAdmin && !isAmbulancia && (
+                                    {isAdmin && (selectedRoster.type === 'cat_adm' || selectedRoster.type === 'cat_odo' || selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_ast') && (
                                         <button 
                                             onClick={() => toggleHoliday(dStr)}
                                             className="absolute top-0 right-0 p-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-bl shadow hover:bg-white transition-opacity"
@@ -1514,13 +1514,33 @@ export const RosterManager: React.FC = () => {
                      <thead>
                         <tr className="h-8">
                           {dates.map((d, i) => {
+                             const dStr = d.toISOString().split('T')[0];
+                             const isAmbulancia = selectedRoster.type === 'cat_amb';
+                             const isHoliday = !isAmbulancia && selectedRoster.holidays?.includes(dStr);
+                             const isOptional = !isAmbulancia && selectedRoster.optionalHolidays?.includes(dStr);
+                             
+                             let bgClass = 'bg-[#e4e9d6]';
+                             if (isHoliday) bgClass = 'bg-red-100';
+                             if (isOptional) bgClass = 'bg-blue-100';
+
                              const cycleInfo = getCycleInfo(d);
                              return (
-                               <td key={d.toISOString()} className="bg-[#e4e9d6] border border-black p-0.5 text-center w-[14.28%]">
+                               <td key={d.toISOString()} className={`${bgClass} border border-black p-0.5 text-center w-[14.28%] relative group`}>
                                   <div className="font-bold text-[8pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
                                   <div className="text-[8pt] leading-none mt-0.5 mb-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                   
-                                  {cycleInfo && (
+                                  {isHoliday && (
+                                     <div className="mt-0.5 bg-red-600 text-white text-[6pt] font-black py-0.5 px-1 rounded shadow-sm leading-none inline-block">
+                                        FERIADO
+                                     </div>
+                                  )}
+                                  {isOptional && (
+                                     <div className="mt-0.5 bg-blue-600 text-white text-[6pt] font-black py-0.5 px-1 rounded shadow-sm leading-none inline-block">
+                                        FACULTATIVO
+                                     </div>
+                                  )}
+
+                                  {cycleInfo && !isHoliday && !isOptional && (
                                     <div className="flex justify-center space-x-1 mt-0.5">
                                        <span className={`text-[6px] font-bold px-1 rounded text-white ${cycleInfo.team24.color} uppercase`}>
                                           {cycleInfo.team24.text.substring(0,3)}
@@ -1529,6 +1549,16 @@ export const RosterManager: React.FC = () => {
                                           {cycleInfo.team2x2}
                                        </span>
                                     </div>
+                                  )}
+
+                                  {isAdmin && (selectedRoster.type === 'cat_odo' || selectedRoster.type === 'cat_psi' || selectedRoster.type === 'cat_ast') && (
+                                      <button 
+                                          onClick={() => toggleHoliday(dStr)}
+                                          className="absolute top-0 right-0 p-0.5 opacity-0 group-hover:opacity-100 bg-white/80 rounded-bl shadow hover:bg-white transition-opacity z-10"
+                                          title="Alternar: Normal -> Feriado -> Facultativo"
+                                      >
+                                          <Calendar size={10} className={isHoliday ? "text-red-600" : (isOptional ? "text-blue-600" : "text-gray-400")} />
+                                      </button>
                                   )}
                                </td>
                              );
@@ -1570,6 +1600,26 @@ export const RosterManager: React.FC = () => {
                                       const isMerged = selectedRoster.mergeWeekendRows && isWeekend;
                                       
                                       if (isMerged && rIdx > 0) return null;
+
+                                      const isAmbulancia = selectedRoster.type === 'cat_amb';
+                                      const isHoliday = !isAmbulancia && selectedRoster.holidays?.includes(dStr);
+                                      const isOptional = !isAmbulancia && selectedRoster.optionalHolidays?.includes(dStr);
+
+                                      if (isHoliday || isOptional) {
+                                          return (
+                                              <td 
+                                                  key={`${row.id}-${dStr}`} 
+                                                  rowSpan={isMerged ? sec.rows.length : 1}
+                                                  className={`border border-black p-0.5 align-middle text-center ${isHoliday ? 'bg-red-50/50' : 'bg-blue-50/50'}`}
+                                              >
+                                                  <div className="w-full h-full flex items-center justify-center min-h-[45px]">
+                                                      <span className={`text-[7pt] font-black select-none tracking-widest ${isHoliday ? 'text-red-300' : 'text-blue-300'}`}>
+                                                          {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
+                                                      </span>
+                                                  </div>
+                                              </td>
+                                          );
+                                      }
 
                                       const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
                                       const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === cellPeriodId);
