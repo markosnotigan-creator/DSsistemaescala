@@ -927,7 +927,7 @@ export const RosterManager: React.FC = () => {
                 <Trash2 size={14}/> <span>EXCLUIR</span>
               </button>
             )}
-            {isAdmin && selectedRoster && selectedRoster.type !== 'cat_amb' && (
+            {isAdmin && selectedRoster.type !== 'cat_amb' && (
               <button onClick={detectHolidaysForCurrentRoster} className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg flex items-center space-x-2 font-black text-[10px] shadow-sm transition-all border border-blue-200 dark:border-blue-800" title="Detectar feriados nacionais automaticamente">
                 <Calendar size={14}/> <span>FERIADOS</span>
               </button>
