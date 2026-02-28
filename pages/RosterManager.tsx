@@ -230,6 +230,15 @@ export const RosterManager: React.FC = () => {
         .filter(r => r.type === rosterType)
         .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())[0];
 
+    const lastRosterRowToSectionTitle: Record<string, string> = {};
+    if (lastRoster && lastRoster.sections) {
+        lastRoster.sections.forEach(sec => {
+            sec.rows.forEach(row => {
+                lastRosterRowToSectionTitle[row.id] = sec.title;
+            });
+        });
+    }
+
     const projectionMap: Record<number, Record<string, string[]>> = {};
 
     if (lastRoster) {
@@ -239,7 +248,12 @@ export const RosterManager: React.FC = () => {
             
             let keyIndex: number;
             if (rosterType === 'cat_amb') {
-                keyIndex = getCycleIndexForDate(sDate);
+                const title = lastRosterRowToSectionTitle[s.period] || '';
+                if (title.toUpperCase().includes('SOBREAVISO')) {
+                    keyIndex = sDate.getDay();
+                } else {
+                    keyIndex = getCycleIndexForDate(sDate);
+                }
             } else {
                 keyIndex = sDate.getDay(); 
             }
@@ -257,23 +271,26 @@ export const RosterManager: React.FC = () => {
 
     while (current <= end) {
         const dateStr = current.toISOString().split('T')[0];
-        
-        let cycleKey: number;
-        if (rosterType === 'cat_amb') {
-             cycleKey = getCycleIndexForDate(current);
-        } else {
-             cycleKey = current.getDay();
-        }
-        
         const cycle = getCycleInfo(current);
         
         // --- ESTRATÉGIA 1: USAR PROJEÇÃO DA ÚLTIMA ESCALA ---
-        const projectedDay = projectionMap[cycleKey];
         let hasProjectedData = false;
 
-        if (projectedDay && Object.keys(projectedDay).length > 0) {
-            sections.forEach(sec => {
-                sec.rows.forEach(row => {
+        sections.forEach(sec => {
+            sec.rows.forEach(row => {
+                let cycleKey: number;
+                if (rosterType === 'cat_amb') {
+                    if (sec.title.toUpperCase().includes('SOBREAVISO')) {
+                        cycleKey = current.getDay();
+                    } else {
+                        cycleKey = getCycleIndexForDate(current);
+                    }
+                } else {
+                    cycleKey = current.getDay();
+                }
+
+                const projectedDay = projectionMap[cycleKey];
+                if (projectedDay) {
                     const soldierIds = projectedDay[row.id];
                     if (soldierIds && soldierIds.length > 0) {
                         soldierIds.forEach(sId => {
@@ -284,9 +301,9 @@ export const RosterManager: React.FC = () => {
                             }
                         });
                     }
-                });
+                }
             });
-        }
+        });
 
         // --- ESTRATÉGIA 2: FALLBACK PARA CADASTRO (EXCLUSIVO PARA AMBULÂNCIA) ---
         if (!hasProjectedData && rosterType === 'cat_amb') {

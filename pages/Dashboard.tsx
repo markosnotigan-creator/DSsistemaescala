@@ -455,9 +455,9 @@ export const Dashboard: React.FC = () => {
     // Garante que militares da TURMA 01 (ou ALFA/BRAVO) NUNCA apareçam na TURMA 02
     // e vice-versa, independente da projeção ou configuração de ciclo.
     if (currentTeam2x2Info.name === 'TURMA 02') {
-        members2x2 = members2x2.filter(s => !['TURMA 01', 'ALFA', 'BRAVO'].includes(s.team || ''));
+        members2x2 = members2x2.filter(s => !['TURMA 01', 'ALFA', 'BRAVO'].includes((s.team || '').toUpperCase()));
     } else if (currentTeam2x2Info.name === 'TURMA 01') {
-        members2x2 = members2x2.filter(s => !['TURMA 02', 'CHARLIE', 'DELTA'].includes(s.team || ''));
+        members2x2 = members2x2.filter(s => !['TURMA 02', 'CHARLIE', 'DELTA'].includes((s.team || '').toUpperCase()));
     }
 
     setSimResult({ 
