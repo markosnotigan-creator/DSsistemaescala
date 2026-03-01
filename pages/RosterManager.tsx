@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../services/store';
-import { getBrazilianHolidays, getHolidayName } from '../utils';
+import { getBrazilianHolidays, getHolidayName, getRankWeight } from '../utils';
 import { Roster, RosterSection, Soldier, Rank, Status, Shift, BankTransaction } from '../types';
 import * as Icons from 'lucide-react';
 import { 
@@ -12,27 +12,6 @@ import {
 } from 'lucide-react';
 import { PrintPreview } from '../components/pdf/PrintPreview';
 
-// Helper para ordenação de patentes
-const getRankWeight = (rank: string) => {
-  const map: Record<string, number> = {
-    [Rank.CEL]: 1, 
-    [Rank.TEN_CEL]: 2, 
-    [Rank.MAJ]: 3, 
-    [Rank.CAP]: 4, 
-    [Rank.TEN_1]: 5, 
-    [Rank.TEN_2]: 6,
-    [Rank.ASP]: 7, 
-    [Rank.SUBTEN]: 8, 
-    [Rank.SGT_1]: 9, 
-    [Rank.SGT_2]: 10, 
-    [Rank.SGT_3]: 11,
-    [Rank.CB]: 12, 
-    [Rank.SD]: 13, 
-    [Rank.CIVIL]: 14
-  };
-  return map[rank] || 99;
-};
-
 const getAbbreviatedRank = (rank: string) => {
   const map: Record<string, string> = {
     [Rank.CEL]: 'Cel', 
@@ -42,6 +21,7 @@ const getAbbreviatedRank = (rank: string) => {
     [Rank.TEN_1]: '1ºTen', 
     [Rank.TEN_2]: '2ºTen',
     [Rank.ASP]: 'Asp', 
+    [Rank.AL_OF]: 'Al Of',
     [Rank.SUBTEN]: 'ST', 
     [Rank.SGT_1]: '1ºSgt', 
     [Rank.SGT_2]: '2ºSgt', 
@@ -51,6 +31,42 @@ const getAbbreviatedRank = (rank: string) => {
     [Rank.CIVIL]: 'Civ'
   };
   return map[rank] || rank;
+};
+
+const ColorPalette = ({ onSelect, current, onClose }: { onSelect: (color: string) => void, current?: string, onClose: () => void }) => {
+  const colors = [
+    { name: 'Padrão', class: 'bg-[#cbd5b0]' },
+    { name: 'Branco', class: 'bg-white' },
+    { name: 'Cinza', class: 'bg-gray-100' },
+    { name: 'Vermelho', class: 'bg-red-100' },
+    { name: 'Azul', class: 'bg-blue-100' },
+    { name: 'Verde', class: 'bg-green-100' },
+    { name: 'Amarelo', class: 'bg-yellow-100' },
+    { name: 'Roxo', class: 'bg-purple-100' },
+    { name: 'Laranja', class: 'bg-orange-100' },
+    { name: 'Esmeralda', class: 'bg-emerald-100' },
+    { name: 'Rosa', class: 'bg-pink-100' },
+    { name: 'Índigo', class: 'bg-indigo-100' },
+  ];
+
+  useEffect(() => {
+    const handleClick = () => onClose();
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [onClose]);
+
+  return (
+    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-2xl rounded-xl p-2 z-[100] grid grid-cols-4 gap-1.5 w-36 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+      {colors.map(c => (
+        <button
+          key={c.class}
+          onClick={(e) => { e.stopPropagation(); onSelect(c.class); onClose(); }}
+          className={`w-7 h-7 rounded-full border border-black/10 dark:border-white/10 ${c.class} ${current === c.class ? 'ring-2 ring-pm-500 ring-offset-2 dark:ring-offset-slate-800' : ''} hover:scale-110 transition-transform shadow-sm`}
+          title={c.name}
+        />
+      ))}
+    </div>
+  );
 };
 
 export const RosterManager: React.FC = () => {
@@ -84,6 +100,7 @@ export const RosterManager: React.FC = () => {
   
   // Estado de busca para grade comum / administrativa
   const [activeSearchCell, setActiveSearchCell] = useState<{date: string, period: string} | null>(null);
+  const [paletteOpenPos, setPaletteOpenPos] = useState<{sIdx: number, rIdx?: number} | null>(null);
 
   const [editingSectionIdx, setEditingSectionIdx] = useState<number | null>(null);
   const [editingRowPos, setEditingRowPos] = useState<{sIdx: number, rIdx: number} | null>(null);
@@ -98,6 +115,16 @@ export const RosterManager: React.FC = () => {
     allRosters.sort((a, b) => new Date(b.creationDate || 0).getTime() - new Date(a.creationDate || 0).getTime());
     setRosters(allRosters);
     setSoldiers(db.getSoldiers());
+  };
+
+  const updateRowBg = (sIdx: number, rIdx: number, bgClass: string) => {
+    if (!selectedRoster || !selectedRoster.sections) return;
+    const newSections = selectedRoster.sections.map((sec, idx) => {
+      if (idx !== sIdx) return sec;
+      const newRows = sec.rows.map((row, i) => i === rIdx ? { ...row, bgClass } : row);
+      return { ...sec, rows: newRows };
+    });
+    updateRoster({ ...selectedRoster, sections: newSections });
   };
 
   // Inicializa datas padrão ao abrir modal de criação (Continuando da última escala)
@@ -411,10 +438,13 @@ export const RosterManager: React.FC = () => {
     }
     if (catId === 'cat_odo') {
       return [
-        { title: "ATENDIMENTO ODONTOLÓGICO", rows: [
-          { id: 'ODO_CLI', label: 'CLÍNICO' },
-          { id: 'ODO_SOBRE', label: 'SOBREAVISO' }
-        ]}
+        { 
+          title: "ATENDIMENTO ODONTOLÓGICO - MANHÃ 07H ÀS 13H", 
+          rows: [
+            { id: 'ODO_CLI', label: 'CLÍNICO' },
+            { id: 'ODO_SOBRE', label: 'SOBREAVISO' }
+          ]
+        }
       ];
     }
     if (catId === 'cat_ast') {
@@ -586,6 +616,12 @@ export const RosterManager: React.FC = () => {
     if (!selectedRoster || !selectedRoster.sections) return;
     if (!confirm("Excluir bloco inteiro?")) return;
     updateRoster({ ...selectedRoster, sections: selectedRoster.sections.filter((_, idx) => idx !== sIdx) });
+  };
+
+  const updateSectionBg = (sIdx: number, bgClass: string) => {
+    if (!selectedRoster || !selectedRoster.sections) return;
+    const newSections = selectedRoster.sections.map((sec, idx) => idx === sIdx ? { ...sec, bgClass } : sec);
+    updateRoster({ ...selectedRoster, sections: newSections });
   };
 
   const updateSectionTitle = (sIdx: number, title: string) => {
@@ -1250,7 +1286,7 @@ export const RosterManager: React.FC = () => {
                            <React.Fragment key={sIdx}>
                               {sec.rows.map((row, rIdx) => (
                                  <tr key={row.id}>
-                                    <td className={`border border-black bg-[#cbd5b0] p-2 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[8pt] relative group ${isAdmin ? 'hover:bg-[#b0bc94] cursor-pointer' : ''}`}>
+                                    <td className={`border border-black ${row.bgClass || 'bg-[#cbd5b0]'} p-2 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[8pt] relative group ${isAdmin ? 'hover:opacity-90 cursor-pointer' : ''}`}>
                                        {isAdmin && editingRowPos?.sIdx === sIdx && editingRowPos?.rIdx === rIdx ? (
                                           <textarea 
                                             autoFocus
@@ -1266,7 +1302,7 @@ export const RosterManager: React.FC = () => {
                                        )}
                                        
                                        {isAdmin && (
-                                         <div className="absolute left-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-1">
+                                         <div className="absolute left-0 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-1 z-20">
                                             <button 
                                               onClick={(e) => { e.stopPropagation(); deleteRow(sIdx, rIdx); }} 
                                               className="bg-red-500 text-white rounded-full p-1 shadow hover:bg-red-600"
@@ -1278,9 +1314,26 @@ export const RosterManager: React.FC = () => {
                                               onClick={(e) => { e.stopPropagation(); toggleRowPhone(sIdx, rIdx); }} 
                                               className={`rounded-full p-1 shadow transition-colors ${row.hidePhone ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                                               title={row.hidePhone ? "Exibir Contatos nesta linha" : "Ocultar Contatos nesta linha"}
-                                            >
-                                              {row.hidePhone ? <EyeOff size={10}/> : <Eye size={10}/>}
-                                            </button>
+                                             >
+                                               {row.hidePhone ? <EyeOff size={10}/> : <Eye size={10}/>}
+                                             </button>
+                                             <div className="relative">
+                                               <button 
+                                                 onClick={(e) => { e.stopPropagation(); setPaletteOpenPos(paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === rIdx ? null : { sIdx, rIdx }); }} 
+                                                 className={`rounded-full p-1 shadow transition-colors ${paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === rIdx ? 'bg-pm-700 text-white' : 'bg-white text-pm-700 hover:bg-pm-50'}`}
+                                                 title="Paleta de Cores da Linha"
+                                               >
+                                                 <Icons.Palette size={10}/>
+                                               </button>
+                                               {paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === rIdx && (
+                                                 <ColorPalette 
+                                                   current={row.bgClass} 
+                                                   onSelect={(color) => updateRowBg(sIdx, rIdx, color)} 
+                                                   onClose={() => setPaletteOpenPos(null)} 
+                                                 />
+                                               )}
+                                             </div>
+                                             
                                          </div>
                                        )}
                                     </td>
@@ -1303,10 +1356,17 @@ export const RosterManager: React.FC = () => {
                                           );
                                        }
 
-                                       const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === row.id);
+                                       const shiftsInCell = selectedRoster.shifts
+                                         .filter(s => s.date === dStr && s.period === row.id)
+                                         .sort((a, b) => {
+                                            const sA = soldiers.find(s => s.id === a.soldierId);
+                                            const sB = soldiers.find(s => s.id === b.soldierId);
+                                            if (!sA || !sB) return 0;
+                                            return getRankWeight(sA.rank) - getRankWeight(sB.rank);
+                                         });
                                        
                                        return (
-                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''}`}>
+                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''} ${row.bgClass || ''}`}>
                                              <div className="flex flex-col space-y-1 min-h-[30px]">
                                                 {shiftsInCell.map((shift, i) => {
                                                    const sdr = soldiers.find(s => s.id === shift.soldierId);
@@ -1439,7 +1499,7 @@ export const RosterManager: React.FC = () => {
         ) : (
           <div className="flex-1 overflow-auto bg-gray-200/80 dark:bg-slate-900 flex justify-center p-8 rounded-lg border-inner shadow-inner">
              {/* LAYOUT OPERACIONAL (AMB/PSI) - Mantém BG White e Text Black */}
-             <div className="w-[210mm] min-h-[297mm] bg-white text-black shadow-2xl relative flex flex-col mx-auto" style={{ padding: '8mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+             <div className={`${selectedRoster.type === 'cat_odo' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'} bg-white text-black shadow-2xl relative flex flex-col mx-auto`} style={{ padding: '8mm', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                 <header className="text-center mb-4 relative">
                    {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                    <div className="mx-20">
@@ -1542,7 +1602,7 @@ export const RosterManager: React.FC = () => {
 
                              const cycleInfo = getCycleInfo(d);
                              return (
-                               <td key={d.toISOString()} className={`${bgClass} border border-black p-0.5 text-center w-[14.28%] relative group`}>
+                               <td key={d.toISOString()} className={`${bgClass} border border-black p-0.5 text-center relative group`} style={{ width: `${100 / dates.length}%` }}>
                                   <div className="font-bold text-[8pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
                                   <div className="text-[8pt] leading-none mt-0.5 mb-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                   
@@ -1585,7 +1645,7 @@ export const RosterManager: React.FC = () => {
                      <tbody>
                        {(selectedRoster.sections || []).map((sec, sIdx) => (
                           <React.Fragment key={sIdx}>
-                             <tr className="h-4 bg-[#cbd5b0]">
+                             <tr className={`h-4 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
                                 <td colSpan={dates.length} className="border border-black p-0 text-center font-bold text-[7pt] uppercase tracking-wide leading-none align-middle group relative">
                                    {isAdmin && (
                                       <div className="absolute left-1 top-0 bottom-0 flex items-center no-print">
@@ -1602,7 +1662,24 @@ export const RosterManager: React.FC = () => {
                                    />
                                    {isAdmin && (
                                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex space-x-2 opacity-60 hover:opacity-100 transition-opacity z-10">
-                                        <button onClick={() => addRow(sIdx)} className="bg-white p-0.5 rounded text-green-600 shadow-sm" title="Adicionar Linha"><PlusCircle size={14}/></button>
+                                        <button 
+                                           onClick={(e) => {
+                                             e.stopPropagation();
+                                             setPaletteOpenPos(paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === undefined ? null : { sIdx });
+                                            }} 
+                                            className={`p-0.5 rounded shadow-sm transition-colors ${paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === undefined ? 'bg-pm-600 text-white' : 'bg-white text-pm-600 hover:bg-pm-50'}`} 
+                                            title="Paleta de Cores do Bloco"
+                                          >
+                                            <Icons.Palette size={14}/>
+                                          </button>
+                                          {paletteOpenPos?.sIdx === sIdx && paletteOpenPos?.rIdx === undefined && (
+                                            <ColorPalette 
+                                              current={sec.bgClass} 
+                                              onSelect={(color) => updateSectionBg(sIdx, color)} 
+                                              onClose={() => setPaletteOpenPos(null)} 
+                                            />
+                                          )}
+                                         <button onClick={() => addRow(sIdx)} className="bg-white p-0.5 rounded text-green-600 shadow-sm" title="Adicionar Linha"><PlusCircle size={14}/></button>
                                         <button onClick={() => deleteSection(sIdx)} className="bg-white p-0.5 rounded text-red-600 shadow-sm" title="Excluir Bloco"><Trash2 size={14}/></button>
                                      </div>
                                    )}
@@ -1639,13 +1716,20 @@ export const RosterManager: React.FC = () => {
                                       }
 
                                       const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
-                                      const shiftsInCell = selectedRoster.shifts.filter(s => s.date === dStr && s.period === cellPeriodId);
+                                      const shiftsInCell = selectedRoster.shifts
+                                        .filter(s => s.date === dStr && s.period === cellPeriodId)
+                                        .sort((a, b) => {
+                                           const sA = soldiers.find(s => s.id === a.soldierId);
+                                           const sB = soldiers.find(s => s.id === b.soldierId);
+                                           if (!sA || !sB) return 0;
+                                           return getRankWeight(sA.rank) - getRankWeight(sB.rank);
+                                        });
                                       
                                       return (
                                         <td 
                                           key={`${row.id}-${dStr}`} 
                                           rowSpan={isMerged ? sec.rows.length : 1}
-                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} ${selectedRoster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-[45px]`}
+                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} ${selectedRoster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-[45px] ${sec.bgClass || ''}`}
                                           onClick={() => { 
                                               if(isAdmin) {
                                                   const isMultiAdd = ['cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster.type);

@@ -1,3 +1,5 @@
+import { Rank } from './types';
+
 export function getBrazilianHolidays(year: number): string[] {
   return getHolidaysWithNames(year).map(h => h.date).sort();
 }
@@ -56,3 +58,24 @@ function getHolidaysWithNames(year: number): { date: string, name: string }[] {
 
   return holidays;
 }
+
+export const getRankWeight = (rank: string) => {
+  const map: Record<string, number> = {
+    [Rank.CEL]: 1, 
+    [Rank.TEN_CEL]: 2, 
+    [Rank.MAJ]: 3, 
+    [Rank.CAP]: 4, 
+    [Rank.TEN_1]: 5, 
+    [Rank.TEN_2]: 6,
+    [Rank.ASP]: 7, 
+    [Rank.AL_OF]: 8,
+    [Rank.SUBTEN]: 9, 
+    [Rank.SGT_1]: 10, 
+    [Rank.SGT_2]: 11, 
+    [Rank.SGT_3]: 12,
+    [Rank.CB]: 13, 
+    [Rank.SD]: 14, 
+    [Rank.CIVIL]: 15
+  };
+  return map[rank] || 99;
+};

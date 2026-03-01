@@ -1,34 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Roster, Rank } from '../../types';
 import { db } from '../../services/store';
-import { getHolidayName } from '../../utils';
+import { getHolidayName, getRankWeight } from '../../utils';
 import { Printer, Download, Loader2, FileText, ZoomIn, ZoomOut, Monitor, RotateCw } from 'lucide-react';
 
 interface PrintPreviewProps {
   roster: Roster;
   onClose: () => void;
 }
-
-// Helper para ordenação de patentes
-const getRankWeight = (rank: string) => {
-  const map: Record<string, number> = {
-    [Rank.CEL]: 1, 
-    [Rank.TEN_CEL]: 2, 
-    [Rank.MAJ]: 3, 
-    [Rank.CAP]: 4, 
-    [Rank.TEN_1]: 5, 
-    [Rank.TEN_2]: 6,
-    [Rank.ASP]: 7, 
-    [Rank.SUBTEN]: 8, 
-    [Rank.SGT_1]: 9, 
-    [Rank.SGT_2]: 10, 
-    [Rank.SGT_3]: 11,
-    [Rank.CB]: 12, 
-    [Rank.SD]: 13, 
-    [Rank.CIVIL]: 14
-  };
-  return map[rank] || 99;
-};
 
 // Helper para abreviar patentes
 const getAbbreviatedRank = (rank: string) => {
@@ -40,6 +19,7 @@ const getAbbreviatedRank = (rank: string) => {
     [Rank.TEN_1]: '1ºTen', 
     [Rank.TEN_2]: '2ºTen',
     [Rank.ASP]: 'Asp', 
+    [Rank.AL_OF]: 'Al Of',
     [Rank.SUBTEN]: 'ST', 
     [Rank.SGT_1]: '1ºSgt', 
     [Rank.SGT_2]: '2ºSgt', 
@@ -113,8 +93,13 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     setIsGenerating(true);
     
     const originalStyle = element.getAttribute('style');
+    const originalWidth = element.style.width;
+    const originalMinHeight = element.style.minHeight;
+    
     element.style.transform = 'none';
     element.style.margin = '0';
+    element.style.width = '297mm'; // Force A4 Landscape width
+    element.style.minHeight = '210mm'; // Ensure at least A4 Landscape height
 
     const opt = {
       margin: 0, 
@@ -122,7 +107,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
       image: { type: 'jpeg', quality: 1 },
       html2canvas: { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      pagebreak: { mode: 'avoid-all' }
+      pagebreak: { mode: ['css', 'legacy'] }
     };
 
     try {
@@ -134,7 +119,12 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     }
     finally { 
       setIsGenerating(false); 
-      if (originalStyle) element.setAttribute('style', originalStyle);
+      if (originalStyle) {
+        element.setAttribute('style', originalStyle);
+      } else {
+        element.style.width = originalWidth;
+        element.style.minHeight = originalMinHeight;
+      }
       handleFitToScreen();
     }
   };
@@ -198,7 +188,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
         }
         #roster-pdf-content .bg-[#cbd5b0], 
         #roster-pdf-content .bg-[#e4e9d6], 
-        #roster-pdf-content .bg-[#e6e6e6] {
+        #roster-pdf-content .bg-[#e6e6e6],
+        #roster-pdf-content .bg-red-100,
+        #roster-pdf-content .bg-blue-100,
+        #roster-pdf-content .bg-green-100,
+        #roster-pdf-content .bg-yellow-100,
+        #roster-pdf-content .bg-purple-100,
+        #roster-pdf-content .bg-orange-100,
+        #roster-pdf-content .bg-gray-100 {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
@@ -311,7 +308,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                 </div>
             </div>
           ) : isGrid ? (
-            <div id="roster-pdf-content" className="w-[297mm] h-[210mm] bg-white" style={{ padding: '4mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '5mm 6mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
                <div className="flex flex-col min-h-full">
                   <header className="text-center mb-1 flex flex-col justify-center border-b border-black/20 pb-0.5 relative h-12 flex-shrink-0">
                      {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
@@ -325,7 +322,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                      </div>
                      {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                   </header>
-                  <div className="flex-1 border border-black relative overflow-hidden">
+                  <div className="flex-1 border border-black relative flex flex-col">
                     <table className="w-full h-full border-collapse text-[7.5pt] table-fixed">
                        <thead>
                           <tr className="h-7">
@@ -343,9 +340,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                           </tr>
                        </thead>
                        <tbody>
-                          {(roster.sections || []).flatMap(sec => sec.rows).map((row) => (
+                          {(roster.sections || []).flatMap(sec => sec.rows.map(row => ({ row, sec }))).map(({ row, sec }) => (
                              <tr key={row.id}>
-                                <td className="border border-black bg-[#cbd5b0] p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[7.5pt]">
+                                 <td className={`border border-black ${row.bgClass || sec.bgClass || 'bg-[#cbd5b0]'} p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[7.5pt]`}>
                                    {row.label}
                                 </td>
                                 {dates.map(d => {
@@ -366,9 +363,16 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                       );
                                    }
  
-                                   const shiftsInCell = roster.shifts.filter(s => s.date === dStr && s.period === row.id);
+                                   const shiftsInCell = roster.shifts
+                                     .filter(s => s.date === dStr && s.period === row.id)
+                                     .sort((a, b) => {
+                                        const sA = allSoldiers.find(s => s.id === a.soldierId);
+                                        const sB = allSoldiers.find(s => s.id === b.soldierId);
+                                        if (!sA || !sB) return 0;
+                                        return getRankWeight(sA.rank) - getRankWeight(sB.rank);
+                                     });
                                    return (
-                                      <td key={`${row.id}-${dStr}`} className="border border-black p-0.5 align-top text-center h-auto">
+                                      <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 align-top text-center h-auto ${row.bgClass || ''}`}>
                                          <div className="flex flex-col space-y-0.5">
                                             {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
                                                const sdr = allSoldiers.find(s => s.id === shift.soldierId);
@@ -414,8 +418,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                </div>
             </div>
           ) : (
-            <div id="roster-pdf-content" className="w-[297mm] h-[210mm] bg-white" style={{ padding: '5mm 4mm 4mm 4mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-                <div className="flex flex-col h-full overflow-hidden">
+            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '6mm 6mm 4mm 6mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+                <div className="flex flex-col h-auto">
                     <header className="text-center mb-1 relative h-16 flex items-center justify-center flex-shrink-0 border-b border-black/10 pb-0.5">
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                        <div className="mx-20 w-full">
@@ -435,8 +439,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             {roster.subTitle}
                         </div>
                     )}
-                    <div className="flex-1 border border-black relative flex flex-col overflow-hidden">
-                       <table className="w-full h-full table-fixed border-collapse">
+                    <div className="border border-black relative flex flex-col">
+                       <table className="w-full table-fixed border-collapse">
                           <thead>
                             <tr className="h-5">
                                {dates.map((d) => {
@@ -450,7 +454,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                   if (isOptional) bgClass = 'bg-gray-100';
 
                                   return (
-                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center w-[14.28%]`}>
+                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center`} style={{ width: `${100 / dates.length}%` }}>
                                         <div className="font-black text-[6.5pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
                                         <div className="text-[5.5pt] font-bold leading-none mt-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                         {isHoliday && (
@@ -471,14 +475,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                           <tbody>
                              {(roster.sections || []).map((sec, sIdx) => (
                                 <React.Fragment key={sIdx}>
-                                   <tr className="h-3.5 bg-[#cbd5b0]">
+                                   <tr className={`h-3.5 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
                                       <td colSpan={dates.length} className="border border-black p-0 text-center font-bold text-[6.5pt] uppercase tracking-wide leading-none align-middle">
                                          {sec.title}
                                       </td>
                                    </tr>
-                                   {sec.rows.map((row, rIdx) => (
-                                      <tr key={row.id}>
-                                         {dates.map((d) => {
+                                  {sec.rows.map((row, rIdx) => (
+                                     <tr key={row.id} className="break-inside-avoid page-break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
+                                        {dates.map((d) => {
                                             const dStr = d.toISOString().split('T')[0];
                                             const isHoliday = roster.holidays?.includes(dStr);
                                             const isOptional = roster.optionalHolidays?.includes(dStr);
@@ -502,13 +506,20 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                             }
 
                                             const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
-                                            const shiftsInCell = roster.shifts.filter(s => s.date === dStr && s.period === cellPeriodId);
+                                            const shiftsInCell = roster.shifts
+                                              .filter(s => s.date === dStr && s.period === cellPeriodId)
+                                              .sort((a, b) => {
+                                                 const sA = allSoldiers.find(s => s.id === a.soldierId);
+                                                 const sB = allSoldiers.find(s => s.id === b.soldierId);
+                                                 if (!sA || !sB) return 0;
+                                                 return getRankWeight(sA.rank) - getRankWeight(sB.rank);
+                                              });
                                             
                                             return (
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-auto`}
+                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-auto ${row.bgClass || sec.bgClass || ''}`}
                                               >
                                                  <div className={`flex flex-col items-center ${roster.type === 'cat_odo' ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-none px-0.5 py-0.5`}>
                                                     {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {

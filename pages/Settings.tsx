@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { db } from '../services/store';
 import { AppSettings, RosterCategory, Soldier, Rank, Role, Status } from '../types';
-import { Save, Upload, Calendar, MapPin, Layers, Plus, Trash2, Edit2, ShieldAlert, Check, X, Image as ImageIcon, Eye, EyeOff, FileSpreadsheet, Download, Lock, Key, Database, RefreshCw, AlertTriangle, Users, Info, Cloud } from 'lucide-react';
+import { Save, Upload, Calendar, MapPin, Layers, Plus, Trash2, Edit2, ShieldAlert, Check, X, Image as ImageIcon, Eye, EyeOff, FileSpreadsheet, Download, Lock, Key, Database, RefreshCw, AlertTriangle, Users, Info, Cloud, Palette } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   console.log("Settings component loaded - v2");
@@ -29,6 +29,21 @@ export const Settings: React.FC = () => {
   const handleSave = () => {
     db.saveSettings(settings);
     alert('Configurações do sistema gravadas com sucesso!');
+  };
+
+  const handlePaletteSelect = (palette: any) => {
+    setSettings({ ...settings, colorPalette: palette });
+  };
+
+  const handleColorChange = (field: string, value: string) => {
+    if (!settings.colorPalette) return;
+    setSettings({
+      ...settings,
+      colorPalette: {
+        ...settings.colorPalette,
+        [field]: value
+      }
+    });
   };
 
   const handleTestSupabase = async () => {
@@ -444,6 +459,124 @@ export const Settings: React.FC = () => {
               >
                 <Upload size={18}/> <span>Processar Dados da Planilha</span>
               </button>
+           </div>
+        </div>
+      </div>
+
+      {/* SEÇÃO: PALETA DE CORES E ESTILO (NOVO) */}
+      <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
+        <h3 className="text-lg font-black text-pm-900 mb-6 border-b pb-4 flex items-center uppercase tracking-tighter">
+          <Palette size={22} className="mr-2 text-pm-700"/> Paleta de Cores e Estilo Visual
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-2 block">Escolher Paleta Pronta</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(settings.availablePalettes || []).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => handlePaletteSelect(p)}
+                      className={`p-3 rounded-xl border-2 transition-all text-left flex items-center space-x-3 ${
+                        settings.colorPalette?.id === p.id ? 'border-pm-600 bg-pm-50' : 'border-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex -space-x-2">
+                        <div className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: p.tableHeaderBg }}></div>
+                        <div className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: p.accentColor }}></div>
+                        <div className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: p.headerBg }}></div>
+                      </div>
+                      <span className="text-xs font-bold uppercase truncate">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h4 className="text-[10px] font-black uppercase text-gray-500 mb-3">Customizar Cores Atuais</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: 'Fundo Cabeçalho', field: 'headerBg' },
+                    { label: 'Texto Cabeçalho', field: 'headerText' },
+                    { label: 'Fundo Topo Tabela', field: 'tableHeaderBg' },
+                    { label: 'Texto Topo Tabela', field: 'tableHeaderText' },
+                    { label: 'Fundo Tabela', field: 'tableBodyBg' },
+                    { label: 'Texto Tabela', field: 'tableBodyText' },
+                    { label: 'Cor das Bordas', field: 'borderColor' },
+                    { label: 'Cor de Destaque', field: 'accentColor' },
+                    { label: 'Fundo Feriado', field: 'holidayBg' },
+                    { label: 'Fundo Facultativo', field: 'optionalHolidayBg' },
+                    { label: 'Fundo Fim de Semana', field: 'weekendBg' }
+                  ].map(item => (
+                    <div key={item.field} className="flex flex-col">
+                      <label className="text-[9px] font-bold uppercase text-gray-400 mb-1 ml-1">{item.label}</label>
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="color" 
+                          className="w-8 h-8 rounded border-none cursor-pointer"
+                          value={(settings.colorPalette as any)?.[item.field] || '#ffffff'}
+                          onChange={(e) => handleColorChange(item.field, e.target.value)}
+                        />
+                        <input 
+                          type="text" 
+                          className="flex-1 p-1 text-[10px] font-mono border rounded uppercase"
+                          value={(settings.colorPalette as any)?.[item.field] || '#ffffff'}
+                          onChange={(e) => handleColorChange(item.field, e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+           </div>
+
+           <div className="flex flex-col">
+              <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-2 block">Prévia da Tabela (Impressão)</label>
+              <div 
+                className="flex-1 border-2 border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center bg-gray-100 overflow-hidden"
+              >
+                <div 
+                  className="w-full max-w-sm shadow-2xl rounded border overflow-hidden transition-all duration-300"
+                  style={{ 
+                    backgroundColor: settings.colorPalette?.headerBg,
+                    borderColor: settings.colorPalette?.borderColor,
+                    borderWidth: '1px',
+                    borderStyle: 'solid'
+                  }}
+                >
+                  <div className="p-2 text-center border-b" style={{ borderColor: settings.colorPalette?.borderColor }}>
+                    <div className="w-12 h-1 bg-gray-300 mx-auto mb-1 rounded-full opacity-20"></div>
+                    <h5 className="text-[8px] font-black uppercase" style={{ color: settings.colorPalette?.headerText }}>Título da Escala</h5>
+                  </div>
+                  <table className="w-full text-[6px] border-collapse">
+                    <thead>
+                      <tr style={{ backgroundColor: settings.colorPalette?.tableHeaderBg, color: settings.colorPalette?.tableHeaderText }}>
+                        <th className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>SETOR</th>
+                        <th className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>SEG 01</th>
+                        <th className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>TER 02</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ backgroundColor: settings.colorPalette?.tableBodyBg, color: settings.colorPalette?.tableBodyText }}>
+                      <tr>
+                        <td className="border p-1 font-bold" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.tableHeaderBg }}>POSTO 01</td>
+                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>MILITAR A</td>
+                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.holidayBg }}>FERIADO</td>
+                      </tr>
+                      <tr>
+                        <td className="border p-1 font-bold" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.tableHeaderBg }}>POSTO 02</td>
+                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.accentColor }}>MILITAR B</td>
+                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>MILITAR C</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div className="p-2 flex justify-between items-center" style={{ color: settings.colorPalette?.headerText, opacity: 0.7 }}>
+                    <div className="w-10 h-1 bg-current rounded-full"></div>
+                    <div className="w-10 h-1 bg-current rounded-full"></div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-400 mt-4 font-medium italic">Esta é uma simulação visual das cores aplicadas.</p>
+              </div>
            </div>
         </div>
       </div>

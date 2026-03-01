@@ -7,6 +7,7 @@ export enum Rank {
   TEN_1 = '1º Ten PM',
   TEN_2 = '2º Ten PM',
   ASP = 'Asp Of PM',
+  AL_OF = 'Al Of PM',
   SUBTEN = 'ST PM',
   SGT_1 = '1º Sgt PM',
   SGT_2 = '2º Sgt PM',
@@ -117,11 +118,13 @@ export interface RosterRow {
   id: string;
   label: string;
   hidePhone?: boolean;
+  bgClass?: string;
 }
 
 export interface RosterSection {
   title: string;
   rows: RosterRow[]; 
+  bgClass?: string;
 }
 
 export interface Roster {
