@@ -687,7 +687,24 @@ export const RosterManager: React.FC = () => {
   const removeShiftFromCell = (shift: any) => {
     if (!selectedRoster) return;
     const newShifts = selectedRoster.shifts.filter(s => s !== shift);
-    updateRoster({ ...selectedRoster, shifts: newShifts });
+    
+    // Remove ANIV text if the removed shift had it
+    let newSituationText = selectedRoster.situationText || '';
+    if (shift.note && shift.note.trim().toUpperCase().startsWith('ANIV')) {
+        const soldier = soldiers.find(s => s.id === shift.soldierId);
+        if (soldier) {
+            const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
+            const name = soldier.name.toUpperCase();
+            const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
+            
+            if (newSituationText.includes(specificLegend)) {
+                newSituationText = newSituationText.split('\n').filter(line => line.trim() !== specificLegend).join('\n');
+            }
+        }
+    }
+
+    updateRoster({ ...selectedRoster, shifts: newShifts, situationText: newSituationText });
   };
 
   const updateShiftNote = (shiftToUpdate: Shift, newNote: string) => {
@@ -705,14 +722,12 @@ export const RosterManager: React.FC = () => {
     if (soldier) {
         const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
         const name = soldier.name.toUpperCase();
-        const birthday = soldier.birthday ? new Date(soldier.birthday + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '??/??';
-        const specificLegend = `ANIV - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário(${birthday})`;
+        const shiftDate = new Date(shiftToUpdate.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
 
-        // Verifica se o militar ainda tem algum ANIV na escala (considerando a nova alteração)
-        const hasAniv = newShifts.some(s => s.soldierId === soldier.id && s.note === 'ANIV');
+        const isAniv = upperNote.startsWith('ANIV');
 
-        if (hasAniv) {
-            // Se tem ANIV, garante que o texto existe
+        if (isAniv) {
             if (!newSituationText.includes(specificLegend)) {
                 if (newSituationText && !newSituationText.endsWith('\n')) {
                     newSituationText += '\n';
@@ -720,7 +735,6 @@ export const RosterManager: React.FC = () => {
                 newSituationText += specificLegend;
             }
         } else {
-            // Se não tem mais ANIV, remove o texto se existir
             if (newSituationText.includes(specificLegend)) {
                 newSituationText = newSituationText.split('\n').filter(line => line.trim() !== specificLegend).join('\n');
             }
@@ -938,13 +952,16 @@ export const RosterManager: React.FC = () => {
     });
 
     // Adiciona os ANIVs
-    anivSoldiers.forEach(s => {
-      const rank = getAbbreviatedRank(s.rank).toUpperCase();
-      const name = s.name.toUpperCase();
-      const birthday = s.birthday ? new Date(s.birthday + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '??/??';
-      const specificLegend = `ANIV - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário(${birthday})`;
-      if (!lines.includes(specificLegend)) {
-          lines.push(specificLegend);
+    anivShifts.forEach(shift => {
+      const s = soldiers.find(soldier => soldier.id === shift.soldierId);
+      if (s) {
+          const rank = getAbbreviatedRank(s.rank).toUpperCase();
+          const name = s.name.toUpperCase();
+          const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
+          if (!lines.includes(specificLegend)) {
+              lines.push(specificLegend);
+          }
       }
     });
 
@@ -1453,7 +1470,7 @@ export const RosterManager: React.FC = () => {
                                                              title={isAdmin ? "Clique para preencher a lacuna" : ""}
                                                            >
                                                              {legend.trim().toUpperCase().startsWith('ANIV') 
-                                                               ? `ANIV(${new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}) - ${sdr.rank} ${sdr.name} - Dispensado do serviço em virtude de seu aniversário.` 
+                                                               ? `ANIV (${new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})` 
                                                                : (legend || (isAdmin ? '(...)' : ''))}
                                                            </span>
                                                          )}
