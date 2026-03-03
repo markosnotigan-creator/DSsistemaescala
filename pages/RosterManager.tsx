@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../services/store';
-import { getBrazilianHolidays, getHolidayName, getRankWeight } from '../utils';
+import { getBrazilianHolidays, getHolidayName, getRankWeight, getAbbreviatedRank } from '../utils';
 import { Roster, RosterSection, Soldier, Rank, Status, Shift, BankTransaction } from '../types';
 import * as Icons from 'lucide-react';
 import { 
@@ -11,27 +11,6 @@ import {
   Columns, Zap, Sparkles, Eye, EyeOff
 } from 'lucide-react';
 import { PrintPreview } from '../components/pdf/PrintPreview';
-
-const getAbbreviatedRank = (rank: string) => {
-  const map: Record<string, string> = {
-    [Rank.CEL]: 'Cel', 
-    [Rank.TEN_CEL]: 'TC', 
-    [Rank.MAJ]: 'Maj', 
-    [Rank.CAP]: 'Cap', 
-    [Rank.TEN_1]: '1ºTen', 
-    [Rank.TEN_2]: '2ºTen',
-    [Rank.ASP]: 'Asp', 
-    [Rank.AL_OF]: 'Al Of',
-    [Rank.SUBTEN]: 'ST', 
-    [Rank.SGT_1]: '1ºSgt', 
-    [Rank.SGT_2]: '2ºSgt', 
-    [Rank.SGT_3]: '3ºSgt', 
-    [Rank.CB]: 'Cb', 
-    [Rank.SD]: 'Sd', 
-    [Rank.CIVIL]: 'Civ'
-  };
-  return map[rank] || rank;
-};
 
 const ColorPalette = ({ onSelect, current, onClose }: { onSelect: (color: string) => void, current?: string, onClose: () => void }) => {
   const colors = [
@@ -107,6 +86,33 @@ export const RosterManager: React.FC = () => {
   const [editingLegendId, setEditingLegendId] = useState<string | null>(null); // Shift ID para edição de legenda
 
   const isAdmin = db.getCurrentUser().role === 'ADMIN';
+
+  const appearance = settings.appearance || { fontFamily: 'Inter', fontSize: 'medium', textCase: 'uppercase' };
+
+  const getFontSizeClass = (size: string) => {
+      switch(size) {
+          case 'small': return 'text-[7pt]';
+          case 'large': return 'text-[11pt]';
+          default: return 'text-[9pt]';
+      }
+  };
+
+  const getSmallFontSizeClass = (size: string) => {
+      switch(size) {
+          case 'small': return 'text-[6pt]';
+          case 'large': return 'text-[9pt]';
+          default: return 'text-[7pt]';
+      }
+  };
+
+  const getTextCaseClass = (c: string) => {
+      switch(c) {
+          case 'lowercase': return 'lowercase';
+          case 'capitalize': return 'capitalize';
+          case 'normal': return 'normal-case';
+          default: return 'uppercase';
+      }
+  };
 
   useEffect(() => { loadData(); }, []);
   const loadData = () => {
@@ -686,12 +692,42 @@ export const RosterManager: React.FC = () => {
 
   const updateShiftNote = (shiftToUpdate: Shift, newNote: string) => {
     if (!selectedRoster) return;
+    const upperNote = newNote.trim().toUpperCase();
     const newShifts = selectedRoster.shifts.map(s => 
       (s.date === shiftToUpdate.date && s.period === shiftToUpdate.period && s.soldierId === shiftToUpdate.soldierId)
-      ? { ...s, note: newNote.toUpperCase() }
+      ? { ...s, note: upperNote }
       : s
     );
-    updateRoster({ ...selectedRoster, shifts: newShifts });
+    
+    let newSituationText = selectedRoster.situationText || '';
+    const soldier = soldiers.find(s => s.id === shiftToUpdate.soldierId);
+
+    if (soldier) {
+        const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
+        const name = soldier.name.toUpperCase();
+        const birthday = soldier.birthday ? new Date(soldier.birthday + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '??/??';
+        const specificLegend = `ANIV - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário(${birthday})`;
+
+        // Verifica se o militar ainda tem algum ANIV na escala (considerando a nova alteração)
+        const hasAniv = newShifts.some(s => s.soldierId === soldier.id && s.note === 'ANIV');
+
+        if (hasAniv) {
+            // Se tem ANIV, garante que o texto existe
+            if (!newSituationText.includes(specificLegend)) {
+                if (newSituationText && !newSituationText.endsWith('\n')) {
+                    newSituationText += '\n';
+                }
+                newSituationText += specificLegend;
+            }
+        } else {
+            // Se não tem mais ANIV, remove o texto se existir
+            if (newSituationText.includes(specificLegend)) {
+                newSituationText = newSituationText.split('\n').filter(line => line.trim() !== specificLegend).join('\n');
+            }
+        }
+    }
+    
+    updateRoster({ ...selectedRoster, shifts: newShifts, situationText: newSituationText });
     setEditingLegendId(null);
   };
 
@@ -844,21 +880,30 @@ export const RosterManager: React.FC = () => {
   const handleAutoSituation = () => {
     if (!selectedRoster) return;
     
-    // Filtra apenas militares que não estão ativos E que pertencem ao setor da escala atual
+    // 1. Filtra apenas militares que não estão ativos E que pertencem ao setor da escala atual
     const notActiveSoldiers = soldiers.filter(s => {
       if (s.status === Status.ATIVO) return false;
       
-      const soldierSector = s.sector?.toLowerCase() || '';
-      const categoryName = activeCategory.name.toLowerCase();
+      const soldierSector = (s.sector || '').trim().toLowerCase();
       
-      // Verifica igualdade ou inclusão para maior flexibilidade (ex: "Odontologia" vs "Odontologia Clínica")
-      return soldierSector === categoryName || 
-             soldierSector.includes(categoryName) || 
-             categoryName.includes(soldierSector);
+      // Garante que usa a categoria da escala atual (selectedRoster) em vez da aba ativa, para segurança
+      const currentCategory = settings.rosterCategories.find(c => c.id === selectedRoster.type) || activeCategory;
+      const categoryName = (currentCategory.name || '').trim().toLowerCase();
+      
+      if (!soldierSector) return false;
+      
+      // Verifica igualdade ou se o setor do militar contém o nome da categoria (ex: "Assistencial Manhã" contém "Assistencial")
+      // REMOVIDO: categoryName.includes(soldierSector) -> Causava falsos positivos com setores vazios ou substrings curtas
+      return soldierSector === categoryName || soldierSector.includes(categoryName);
     });
+
+    // 2. Militares com ANIV na escala atual (independente de setor)
+    const anivShifts = selectedRoster.shifts.filter(s => s.note === 'ANIV');
+    const anivSoldierIds = Array.from(new Set(anivShifts.map(s => s.soldierId)));
+    const anivSoldiers = soldiers.filter(s => anivSoldierIds.includes(s.id));
     
-    if (notActiveSoldiers.length === 0) {
-      alert(`Nenhum militar do setor "${activeCategory.name}" com status de afastamento ou alteração encontrado.`);
+    if (notActiveSoldiers.length === 0 && anivSoldiers.length === 0) {
+      alert(`Nenhum militar do setor "${activeCategory.name}" com status de afastamento ou militares com aniversário (ANIV) encontrados.`);
       return;
     }
 
@@ -875,23 +920,35 @@ export const RosterManager: React.FC = () => {
         return `${day}/${month}`;
     };
 
-    const textLines = notActiveSoldiers.map(s => {
-      let statusText = s.status.toString().toUpperCase();
+    const lines: string[] = [];
 
+    // Adiciona os afastados
+    notActiveSoldiers.forEach(s => {
+      const soldierInfo = `${getAbbreviatedRank(s.rank)} ${s.name}`.toUpperCase();
+      let statusDescription = s.status.toString();
       if (s.absenceStartDate && s.absenceEndDate) {
         const d1 = formatDate(s.absenceStartDate);
         const d2 = formatDate(s.absenceEndDate);
-        statusText += ` DE ${d1} A ${d2}`;
+        statusDescription += ` de ${d1} a ${d2}`;
       }
-
       if (s.status === Status.FOLGA && s.folgaReason) {
-         statusText += ` - ${s.folgaReason.toUpperCase()}`;
+         statusDescription += ` - ${s.folgaReason}`;
       }
-
-      return `${getAbbreviatedRank(s.rank)} ${s.name} (${statusText})`;
+      lines.push(`${soldierInfo} (${statusDescription})`);
     });
 
-    const newText = textLines.join(', ');
+    // Adiciona os ANIVs
+    anivSoldiers.forEach(s => {
+      const rank = getAbbreviatedRank(s.rank).toUpperCase();
+      const name = s.name.toUpperCase();
+      const birthday = s.birthday ? new Date(s.birthday + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '??/??';
+      const specificLegend = `ANIV - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário(${birthday})`;
+      if (!lines.includes(specificLegend)) {
+          lines.push(specificLegend);
+      }
+    });
+
+    const newText = lines.join('\n');
     updateRoster({...selectedRoster, situationText: newText});
   };
 
@@ -1366,7 +1423,7 @@ export const RosterManager: React.FC = () => {
                                          });
                                        
                                        return (
-                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''} ${row.bgClass || ''}`}>
+                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-1 align-top text-center relative group ${isAdmin ? 'hover:bg-gray-50' : ''} ${shiftsInCell.some(s => s.note === 'ANIV') ? 'bg-green-100' : (row.bgClass || '')}`}>
                                              <div className="flex flex-col space-y-1 min-h-[30px]">
                                                 {shiftsInCell.map((shift, i) => {
                                                    const sdr = soldiers.find(s => s.id === shift.soldierId);
@@ -1392,10 +1449,12 @@ export const RosterManager: React.FC = () => {
                                                          ) : (
                                                            <span 
                                                              onClick={() => isAdmin && setEditingLegendId(shiftId)}
-                                                             className={`ml-1 font-black ${isAdmin ? 'cursor-pointer hover:underline' : ''} ${legend ? 'text-blue-800' : 'text-gray-300'}`}
+                                                             className={`ml-1 font-black ${isAdmin ? 'cursor-pointer hover:underline' : ''} ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : (legend ? 'text-blue-800' : 'text-gray-300')}`}
                                                              title={isAdmin ? "Clique para preencher a lacuna" : ""}
                                                            >
-                                                             {legend || (isAdmin ? '(...)' : '')}
+                                                             {legend.trim().toUpperCase().startsWith('ANIV') 
+                                                               ? `ANIV(${new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}) - ${sdr.rank} ${sdr.name} - Dispensado do serviço em virtude de seu aniversário.` 
+                                                               : (legend || (isAdmin ? '(...)' : ''))}
                                                            </span>
                                                          )}
 
@@ -1478,9 +1537,9 @@ export const RosterManager: React.FC = () => {
                            </div>
                            <textarea 
                               readOnly={!isAdmin}
-                              className={`w-full bg-transparent resize-none outline-none text-[8pt] h-12 uppercase text-black ${isAdmin ? '' : 'pointer-events-none'}`} 
+                              className={`w-full bg-transparent resize-none outline-none text-[8pt] h-12 text-black ${isAdmin ? '' : 'pointer-events-none'}`} 
                               value={selectedRoster.situationText || ''}
-                              onChange={e => updateRoster({...selectedRoster, situationText: e.target.value.toUpperCase()})}
+                              onChange={e => updateRoster({...selectedRoster, situationText: e.target.value})}
                               placeholder={isAdmin ? "Ex: Sd Fulano (Férias), Cb Sicrano (LTS)..." : ""}
                           />
                       </div>
@@ -1725,11 +1784,13 @@ export const RosterManager: React.FC = () => {
                                            return getRankWeight(sA.rank) - getRankWeight(sB.rank);
                                         });
                                       
+                                      const hasAniv = shiftsInCell.some(s => s.note === 'ANIV');
+                                      
                                       return (
                                         <td 
                                           key={`${row.id}-${dStr}`} 
                                           rowSpan={isMerged ? sec.rows.length : 1}
-                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} ${selectedRoster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-[45px] ${sec.bgClass || ''}`}
+                                          className={`border border-black relative group p-0.5 ${isAdmin ? 'hover:bg-yellow-50 cursor-pointer' : ''} ${selectedRoster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-[45px] ${hasAniv ? 'bg-green-100' : (sec.bgClass || '')}`}
                                           onClick={() => { 
                                               if(isAdmin) {
                                                   const isMultiAdd = ['cat_ast', 'cat_psi', 'cat_odo'].includes(selectedRoster.type);
@@ -1747,15 +1808,16 @@ export const RosterManager: React.FC = () => {
                                                 const shiftId = `${shift.date}-${shift.period}-${shift.soldierId}`;
                                                 const legend = shift.note || "";
 
-                                                return (
-                                                   <div key={idx} className="w-full relative group/item text-black">
-                                                     <div className="text-[9pt] font-bold text-center leading-none uppercase truncate w-full px-0.5">
+
+                                                 return (
+                                                   <div key={idx} className="w-full relative group/item text-black" style={{ fontFamily: appearance.fontFamily }}>
+                                                     <div className={`${getFontSizeClass(appearance.fontSize)} ${getTextCaseClass(appearance.textCase)} font-bold text-center leading-none truncate w-full px-0.5`}>
                                                        {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
                                                      </div>
-                                                     <div className="text-[7pt] text-center mt-0.5 font-bold text-gray-600 leading-none">
+                                                     <div className={`${getSmallFontSizeClass(appearance.fontSize)} text-center mt-0.5 font-bold text-gray-600 leading-none`}>
                                                         {sdr.phone || '-'}
                                                      </div>
-                                                     <div className="text-[7pt] text-center mt-0.5 font-black text-blue-800 leading-none min-h-[8px]">
+                                                     <div className={`${getSmallFontSizeClass(appearance.fontSize)} text-center mt-0.5 font-black text-blue-800 leading-none min-h-[8px]`}>
                                                         {isAdmin && editingLegendId === shiftId ? (
                                                            <input 
                                                              autoFocus
@@ -1767,8 +1829,8 @@ export const RosterManager: React.FC = () => {
                                                            />
                                                         ) : (
                                                            <span 
-                                                             onClick={(e) => { e.stopPropagation(); if(isAdmin) setEditingLegendId(shiftId); }}
-                                                             className={`${isAdmin ? 'cursor-pointer' : ''} ${legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden')}`}
+                                                              onClick={(e) => { e.stopPropagation(); if(isAdmin) setEditingLegendId(shiftId); }}
+                                                              className={`${isAdmin ? 'cursor-pointer' : ''} ${legend === 'ANIV' ? 'text-green-800 font-black' : (legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden'))}`}
                                                            >
                                                               {legend || '(+)'}
                                                            </span>

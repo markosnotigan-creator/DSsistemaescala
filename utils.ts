@@ -79,3 +79,24 @@ export const getRankWeight = (rank: string) => {
   };
   return map[rank] || 99;
 };
+
+export const getAbbreviatedRank = (rank: string) => {
+  const map: Record<string, string> = {
+    [Rank.CEL]: 'Cel', 
+    [Rank.TEN_CEL]: 'TC', 
+    [Rank.MAJ]: 'Maj', 
+    [Rank.CAP]: 'Cap', 
+    [Rank.TEN_1]: '1ºTen', 
+    [Rank.TEN_2]: '2ºTen',
+    [Rank.ASP]: 'Asp', 
+    [Rank.AL_OF]: 'Al Of',
+    [Rank.SUBTEN]: 'ST', 
+    [Rank.SGT_1]: '1ºSgt', 
+    [Rank.SGT_2]: '2ºSgt', 
+    [Rank.SGT_3]: '3ºSgt', 
+    [Rank.CB]: 'Cb', 
+    [Rank.SD]: 'Sd', 
+    [Rank.CIVIL]: 'Civ'
+  };
+  return map[rank] || rank;
+};

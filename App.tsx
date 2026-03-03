@@ -39,7 +39,7 @@ function App() {
              const user: User = {
                 id: session.user.id,
                 username: session.user.email || 'Administrador',
-                role: 'ADMIN'
+                role: session.user.email?.toLowerCase().includes('operador') ? 'USER' : 'ADMIN'
              };
              sessionStorage.setItem('current_user', JSON.stringify(user));
              setUser(user);
@@ -51,7 +51,7 @@ function App() {
              const user: User = {
                 id: session.user.id,
                 username: session.user.email || 'Administrador',
-                role: 'ADMIN'
+                role: session.user.email?.toLowerCase().includes('operador') ? 'USER' : 'ADMIN'
              };
              sessionStorage.setItem('current_user', JSON.stringify(user));
              setUser(user);
@@ -112,9 +112,11 @@ function App() {
         } />
 
         <Route path="/settings" element={
-          <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
-            <Settings />
-          </Layout>
+          user.role === 'ADMIN' ? (
+            <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
+              <Settings />
+            </Layout>
+          ) : <Navigate to="/" replace />
         } />
 
         <Route path="*" element={<Navigate to="/" replace />} />

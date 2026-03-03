@@ -156,7 +156,12 @@ const INITIAL_SETTINGS: AppSettings = {
   rosterCategories: INITIAL_CATEGORIES,
   teamMappings: INITIAL_TEAM_MAPPINGS,
   colorPalette: DEFAULT_PALETTES[0],
-  availablePalettes: DEFAULT_PALETTES
+  availablePalettes: DEFAULT_PALETTES,
+  appearance: {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: 'medium',
+    textCase: 'uppercase'
+  }
 };
 
 const INITIAL_SOLDIERS: Soldier[] = [
@@ -268,7 +273,9 @@ class StoreService {
       teamMappings: stored.teamMappings || defaults.teamMappings,
       // Color Palettes
       colorPalette: stored.colorPalette || defaults.colorPalette,
-      availablePalettes: DEFAULT_PALETTES // Always use the latest system palettes
+      availablePalettes: DEFAULT_PALETTES, // Always use the latest system palettes
+      // Typography
+      appearance: stored.appearance || defaults.appearance
     };
     
     // Ensure cat_odo exists in rosterCategories
@@ -402,7 +409,7 @@ class StoreService {
 
   // --- AUTHENTICATION LOGIC (SUPABASE) ---
 
-  async login(password: string): Promise<{ user: User | null, error: string | null }> {
+  async login(email: string, password: string): Promise<{ user: User | null, error: string | null }> {
     if (!supabase) {
       // Fallback para modo offline (apenas para desenvolvimento local sem Supabase)
       // Em produção, isso deve ser desabilitado ou removido.
@@ -414,11 +421,6 @@ class StoreService {
     }
 
     try {
-      // Mapeamento de senha única para email/senha do Supabase
-      // Isso mantém a UX de "Senha Única" solicitada, mas usa autenticação real no backend.
-      // O email é fixo para este caso de uso específico.
-      const email = 'marcos_notigan@hotmail.com'; // Email administrativo padrão
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -484,10 +486,8 @@ class StoreService {
     return key === MASTER_KEY;
   }
 
-  async resetAdminPassword(newPassword: string): Promise<void> {
+  async resetAdminPassword(email: string, newPassword: string): Promise<void> {
     if (supabase) {
-        const email = 'marcos_notigan@hotmail.com';
-        
         // Tenta criar o usuário (caso não exista)
         const { data, error } = await supabase.auth.signUp({
             email,
@@ -495,12 +495,15 @@ class StoreService {
         });
 
         if (error) {
-            // Se o usuário já existe, não podemos alterar a senha sem a antiga ou sem email.
-            // Mas para facilitar o "setup", vamos logar o erro.
+            if (error.message.includes("already registered")) {
+                const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+                if (resetError) {
+                    throw new Error("Erro ao enviar email de recuperação: " + resetError.message);
+                }
+                throw new Error("Usuário já existe. Um email de recuperação foi enviado para " + email + ". Verifique sua caixa de entrada.");
+            }
             console.error("Erro ao criar/resetar usuário admin:", error.message);
-            throw new Error(error.message.includes("already registered") 
-                ? "Usuário admin já existe. Se esqueceu a senha, use o painel do Supabase." 
-                : error.message);
+            throw new Error(error.message);
         }
 
         if (data.user && !data.session) {

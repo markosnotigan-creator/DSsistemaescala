@@ -18,11 +18,11 @@ export const Personnel: React.FC = () => {
   // Form State
   const [formData, setFormData] = useState<Partial<Soldier>>({
     name: '', fullName: '', rank: Rank.SD, cadre: Cadre.QOPPM, role: Role.MOTORISTA, roleShort: '(M)', sector: '', team: '', status: Status.ATIVO, phone: '', matricula: '', mf: '',
-    absenceStartDate: '', absenceEndDate: '', folgaReason: '', availableForExtra: true, orderExtra: 0
+    absenceStartDate: '', absenceEndDate: '', folgaReason: '', availableForExtra: true, orderExtra: 0, birthday: ''
   });
 
   const isAdmin = user.role === 'ADMIN';
-  const isOperator = isAdmin; // Only admin can edit personnel in this simplified model
+  const canEditPersonnel = isAdmin;
   const isViewer = user.role === 'USER';
 
   useEffect(() => {
@@ -86,7 +86,8 @@ export const Personnel: React.FC = () => {
       absenceEndDate: formData.status !== Status.ATIVO && formData.status !== Status.FOLGA ? formData.absenceEndDate : undefined,
       folgaReason: formData.status === Status.FOLGA ? formData.folgaReason : undefined,
       availableForExtra: formData.availableForExtra !== undefined ? formData.availableForExtra : true,
-      orderExtra: Number(nextOrder)
+      orderExtra: Number(nextOrder),
+      birthday: formData.birthday
     };
 
     db.saveSoldier(newSoldier);
@@ -226,7 +227,7 @@ export const Personnel: React.FC = () => {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        {isOperator && (
+        {canEditPersonnel && (
           <div className="flex space-x-2">
             <button 
               onClick={() => setIsImportModalOpen(true)}
@@ -270,6 +271,7 @@ export const Personnel: React.FC = () => {
                   {s.name}
                   {s.matricula && <span className="block text-[10px] text-gray-400 font-normal">Num: {s.matricula}</span>}
                   {s.mf && <span className="block text-[10px] text-gray-400 font-normal">MF: {s.mf}</span>}
+                  {s.birthday && <span className="block text-[10px] text-gray-400 font-normal">Nasc: {formatDate(s.birthday)}</span>}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 font-mono text-xs">{s.phone || '-'}</td>
                 <td className="px-6 py-4 text-sm">

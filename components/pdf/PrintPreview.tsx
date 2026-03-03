@@ -1,35 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Roster, Rank } from '../../types';
 import { db } from '../../services/store';
-import { getHolidayName, getRankWeight } from '../../utils';
+import { getHolidayName, getRankWeight, getAbbreviatedRank } from '../../utils';
 import { Printer, Download, Loader2, FileText, ZoomIn, ZoomOut, Monitor, RotateCw } from 'lucide-react';
 
 interface PrintPreviewProps {
   roster: Roster;
   onClose: () => void;
 }
-
-// Helper para abreviar patentes
-const getAbbreviatedRank = (rank: string) => {
-  const map: Record<string, string> = {
-    [Rank.CEL]: 'Cel', 
-    [Rank.TEN_CEL]: 'TC', 
-    [Rank.MAJ]: 'Maj', 
-    [Rank.CAP]: 'Cap', 
-    [Rank.TEN_1]: '1ºTen', 
-    [Rank.TEN_2]: '2ºTen',
-    [Rank.ASP]: 'Asp', 
-    [Rank.AL_OF]: 'Al Of',
-    [Rank.SUBTEN]: 'ST', 
-    [Rank.SGT_1]: '1ºSgt', 
-    [Rank.SGT_2]: '2ºSgt', 
-    [Rank.SGT_3]: '3ºSgt', 
-    [Rank.CB]: 'Cb', 
-    [Rank.SD]: 'Sd', 
-    [Rank.CIVIL]: 'Civ'
-  };
-  return map[rank] || rank;
-};
 
 export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) => {
   const settings = db.getSettings();
@@ -49,6 +27,29 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
 
   const cleanHeaderTitle = (roster.headerTitle || settings.orgName || '').replace(/\s*\(TESTE CONEXÃO[^)]+\)/g, '');
+
+  const appearance = settings.appearance || { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 'medium', textCase: 'uppercase' };
+
+  const getPrintFontSize = (type: 'name' | 'phone' | 'header' | 'title' | 'subtitle' | 'cell' | 'meta' | 'tiny', size: string) => {
+      const sizes = {
+          small: { name: '6.5pt', phone: '6pt', header: '6pt', title: '9pt', subtitle: '7pt', cell: '6.5pt', meta: '6pt', tiny: '5pt' },
+          medium: { name: '7.5pt', phone: '7pt', header: '7pt', title: '10.5pt', subtitle: '8pt', cell: '7.5pt', meta: '7pt', tiny: '5.5pt' },
+          large: { name: '8.5pt', phone: '8pt', header: '8pt', title: '12pt', subtitle: '9pt', cell: '8.5pt', meta: '8pt', tiny: '6pt' }
+      };
+      // @ts-ignore
+      return sizes[size]?.[type] || sizes.medium[type];
+  };
+
+  const getPrintTextTransform = (c: string) => {
+      switch(c) {
+          case 'lowercase': return 'lowercase';
+          case 'capitalize': return 'capitalize';
+          case 'normal': return 'none';
+          default: return 'uppercase';
+      }
+  };
+
+  const textTransformStyle = { textTransform: getPrintTextTransform(appearance.textCase) as any };
 
   // Ajuste automático ao abrir
   useEffect(() => {
@@ -156,21 +157,24 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   const renderExtraCell = (headerName: string, item: any, colIndex: number) => {
     const h = headerName.toUpperCase();
     const s = item.soldier;
+    const textStyle = { textTransform: getPrintTextTransform(appearance.textCase) as any };
 
-    if (h.includes('GRAD') || h.includes('POSTO')) return getAbbreviatedRank(s.rank);
-    if (h.includes('COMPLETO')) return <span className="text-left block pl-2 uppercase">{s.fullName || s.name}</span>;
-    if (h.includes('NOME')) return <div className="text-left pl-2 uppercase truncate">{s.name}</div>;
+    if (h.includes('GRAD') || h.includes('POSTO')) return <span style={textStyle}>{getAbbreviatedRank(s.rank)}</span>;
+    if (h.includes('COMPLETO')) return <span className="text-left block pl-2" style={textStyle}>{s.fullName || s.name}</span>;
+    if (h.includes('NOME')) return <div className="text-left pl-2 truncate" style={textStyle}>{s.name}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
     if (h === 'MAT' || h.includes('MAT.') || h === 'NUM' || h.includes('NUM.')) return s.matricula || '-';
     if (h.includes('CEL') || h.includes('TEL')) return s.phone || '-';
-    if (h.includes('FUN') || h.includes('CARGO')) return <span>{s.role}</span>;
-    if (h.includes('SETOR') || h.includes('UNIDADE') || h.includes('LOTA')) return <span>{s.sector}</span>;
-    if (h.includes('SIT') || h.includes('STATUS')) return <span className="font-bold">{s.status}</span>;
+    if (h.includes('FUN') || h.includes('CARGO')) return <span style={textStyle}>{s.role}</span>;
+    if (h.includes('SETOR') || h.includes('UNIDADE') || h.includes('LOTA')) return <span style={textStyle}>{s.sector}</span>;
+    if (h.includes('SIT') || h.includes('STATUS')) return <span className="font-bold" style={textStyle}>{s.status}</span>;
     if (h === 'NR' || h === 'NR.' || h === 'OBS') {
-        return item.shift.customData?.[colIndex] !== undefined ? item.shift.customData[colIndex] : (item.shift.note || '-');
+        const val = item.shift.customData?.[colIndex] !== undefined ? item.shift.customData[colIndex] : (item.shift.note || '-');
+        return <span style={textStyle}>{val}</span>;
     }
-    return item.shift.customData?.[colIndex.toString()] || '-';
+    const customVal = item.shift.customData?.[colIndex.toString()] || '-';
+    return <span style={textStyle}>{customVal}</span>;
   };
 
   const containerClass = "w-[297mm] min-h-[210mm] bg-white";
@@ -260,24 +264,28 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           className="transition-transform duration-200 ease-out origin-top will-change-transform bg-white shadow-2xl"
         >
           {isExtra ? (
-            <div id="roster-pdf-content" className={containerClass} style={{ padding: '5mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+            <div id="roster-pdf-content" className={containerClass} style={{ padding: '5mm', fontFamily: appearance.fontFamily, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
                 <div className="flex flex-col min-h-full">
-                    <header className="flex justify-between items-start mb-4 h-16 relative w-full flex-shrink-0">
-                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}<div className="flex-1"></div>
+                    <header className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
+                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}
+                        <div className="flex-1 text-center px-4">
+                            <h2 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>{settings.institutionName || 'POLÍCIA MILITAR DO CEARÁ'}</h2>
+                            <h3 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName || 'COMANDO DE POLICIAMENTO DE CHOQUE'}</h3>
+                        </div>
                         {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="Gov" />}
                     </header>
                     <div className="text-center mb-2 flex-shrink-0">
-                        <h1 className="text-[14pt] font-bold uppercase leading-tight">{roster.title}</h1>
+                        <h1 className="font-bold uppercase leading-tight" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>{roster.title}</h1>
                     </div>
-                    <div className="mb-2 text-[9pt] text-left flex-shrink-0">
-                        <span className="font-bold">APRESENTAÇÃO:</span> <span className="uppercase">{roster.observations}</span>
+                    <div className="mb-2 text-left flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
+                        <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span style={textTransformStyle}>{roster.observations}</span>
                     </div>
                     <div className="flex-1 relative">
-                        <table className="w-full border-collapse border border-black text-[11pt] table-auto">
+                        <table className="w-full border-collapse border border-black table-auto" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                             <thead>
                               <tr className="bg-[#e6e6e6]">
                                 {HEADERS.map((h, i) => (
-                                   <th key={i} className="border border-black p-1 text-center font-bold px-2">{h}</th>
+                                   <th key={i} className="border border-black p-1 text-center font-bold px-2" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{h}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -298,32 +306,31 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             </tbody>
                         </table>
                     </div>
-                    <div className="text-right text-[10pt] mb-4 mt-2 font-bold flex-shrink-0">{settings.city}, {creationDateFormatted}</div>
+                    <div className="text-right mb-4 mt-2 font-bold flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.city}, {creationDateFormatted}</div>
                     <div className="text-center mb-2 flex-shrink-0">
                          <div className="w-1/3 mx-auto border-b border-black mb-1"></div>
-                         <p className="font-bold uppercase text-[9pt] leading-none">{settings.directorName} – {settings.directorRank}</p>
-                         <p className="uppercase text-[8pt] leading-none mt-1">{settings.directorRole}</p>
-                         <p className="uppercase text-[8pt] leading-none mt-1">{settings.directorMatricula}</p> 
+                         <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                         <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
+                         <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                     </div>
                 </div>
             </div>
           ) : isGrid ? (
-            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '5mm 6mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '5mm 6mm', fontFamily: appearance.fontFamily, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
                <div className="flex flex-col min-h-full">
-                  <header className="text-center mb-1 flex flex-col justify-center border-b border-black/20 pb-0.5 relative h-12 flex-shrink-0">
-                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
+                  <header className="text-center mb-1 flex flex-col justify-center border-b border-black/20 pb-0.5 relative h-16 flex-shrink-0">
+                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                      <div className="mx-20">
-                       {/* TÍTULO DA ORGANIZAÇÃO (AGORA PERSONALIZÁVEL) */}
-                       <h1 className="text-[10pt] font-bold uppercase tracking-wide text-gray-800">
-                         {cleanHeaderTitle}
+                       <h1 className="font-bold uppercase tracking-wide text-gray-800" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
+                         {settings.institutionName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
                        </h1>
-                       <h2 className="text-[12pt] font-black uppercase tracking-tight leading-tight">{roster.title}</h2>
-                       <div className="text-[8pt] font-bold uppercase">DO DIA {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
+                       <h2 className="font-black uppercase tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName || roster.title}</h2>
+                       <div className="font-bold uppercase" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>DO DIA {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
                      </div>
-                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
+                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
                   </header>
                   <div className="flex-1 border border-black relative flex flex-col">
-                    <table className="w-full h-full border-collapse text-[7.5pt] table-fixed">
+                    <table className="w-full h-full border-collapse table-fixed" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                        <thead>
                           <tr className="h-7">
                              <th className="border border-black bg-[#cbd5b0] p-0.5 w-32"></th>
@@ -332,8 +339,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                 const isHoliday = roster.holidays?.includes(dStr);
                                 return (
                                    <th key={d.toISOString()} className={`border border-black ${isHoliday ? 'bg-gray-200' : 'bg-[#e4e9d6]'} p-0.5 text-center uppercase`}>
-                                      <div className="font-bold text-[7pt]">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                                      {isHoliday && <div className="text-[5pt] font-black">FERIADO</div>}
+                                      <div className="font-bold" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                      {isHoliday && <div className="font-black" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>FERIADO</div>}
                                    </th>
                                 );
                              })}
@@ -342,7 +349,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        <tbody>
                           {(roster.sections || []).flatMap(sec => sec.rows.map(row => ({ row, sec }))).map(({ row, sec }) => (
                              <tr key={row.id}>
-                                 <td className={`border border-black ${row.bgClass || sec.bgClass || 'bg-[#cbd5b0]'} p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight text-[7.5pt]`}>
+                                 <td className={`border border-black ${row.bgClass || sec.bgClass || 'bg-[#cbd5b0]'} p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight`} style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                                    {row.label}
                                 </td>
                                 {dates.map(d => {
@@ -355,7 +362,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                       return (
                                          <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 align-middle text-center h-auto ${isHoliday ? 'bg-gray-100' : 'bg-blue-50'}`}>
                                             <div className="flex flex-col space-y-1 h-full justify-center">
-                                                <span className={`text-[7pt] font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`}>
+                                                <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                                                    {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
                                                 </span>
                                             </div>
@@ -374,19 +381,19 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                    return (
                                       <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 align-top text-center h-auto ${row.bgClass || ''}`}>
                                          <div className="flex flex-col space-y-0.5">
-                                            {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
+                                             {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
                                                const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                // IMPRESSÃO GRADE (ADM/AST/CUSTOM): Só mostra a nota preenchida na lacuna
                                                const legend = shift.note || '';
                                                return sdr ? (
-                                                  <div key={i} className="text-[7pt] font-bold uppercase leading-tight">
+                                                  <div key={i} className="font-bold leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
                                                      <div>{getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort} {legend && <span className="ml-0.5 text-blue-800 font-black">{legend}</span>}</div>
                                                      {!row.hidePhone && !roster.hidePhone && sdr.phone && (
-                                                        <div className="text-[7pt] text-gray-600 font-bold leading-none mt-0.5">{sdr.phone}</div>
+                                                        <div className="text-gray-600 font-bold leading-none mt-0.5" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone}</div>
                                                      )}
                                                   </div>
                                                ) : null;
-                                            }) : <span className="text-[6pt] text-gray-300 font-bold">***</span>}
+                                            }) : <span className="text-gray-300 font-bold" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>***</span>}
                                          </div>
                                       </td>
                                    );
@@ -396,51 +403,53 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        </tbody>
                     </table>
                   </div>
-                  <div className="mt-2 text-[8pt] relative flex-shrink-0">
+                  <div className="mt-2 relative flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
                      <div className="flex w-full mb-1 border border-black p-1 bg-white">
                          <div className="w-1/2 pr-1 border-r border-black">
-                             <span className="font-bold uppercase block text-[7pt] mb-0.5">OBSERVAÇÕES:</span> 
-                             <div className="uppercase leading-tight">{roster.observations}</div>
+                             <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>OBSERVAÇÕES:</span> 
+                             <div className="leading-tight">{roster.observations}</div>
                          </div>
                          <div className="w-1/2 pl-1">
-                             <span className="font-bold uppercase block text-[7pt] mb-0.5">ALTERAÇÕES:</span>
-                             <div className="uppercase leading-tight">{roster.situationText || 'Sem alterações.'}</div>
+                             <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>ALTERAÇÕES:</span>
+                             <div className="leading-tight">{roster.situationText || 'Sem alterações.'}</div>
                          </div>
                      </div>
                      <div className="text-right font-bold mt-1">{settings.city}, {creationDateFormatted}</div>
                      <div className="text-center w-1/3 mx-auto mt-2">
                         <div className="w-full border-b border-black mb-0.5"></div>
-                        <p className="font-bold uppercase text-[8pt] leading-none">{settings.directorName} – {settings.directorRank}</p>
-                        <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorRole}</p>
-                        <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorMatricula}</p> 
+                        <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                        <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
+                        <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                      </div>
                   </div>
                </div>
             </div>
           ) : (
-            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '6mm 6mm 4mm 6mm', fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '6mm 6mm 4mm 6mm', fontFamily: appearance.fontFamily, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
                 <div className="flex flex-col h-auto">
-                    <header className="text-center mb-1 relative h-16 flex items-center justify-center flex-shrink-0 border-b border-black/10 pb-0.5">
+                    <header className="text-center mb-1 relative min-h-16 flex flex-col items-center justify-center flex-shrink-0 border-b border-black/10 pb-0.5">
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                        <div className="mx-20 w-full">
-                         {/* TÍTULO EDITÁVEL DA ORGANIZAÇÃO (AMBULÂNCIA/PSICOLOGIA) */}
-                         <h1 className="text-[8.5pt] font-bold uppercase tracking-tight leading-none mb-0.5">
-                            {cleanHeaderTitle}
+                         <h1 className="font-bold uppercase tracking-tight leading-none mb-0.5" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
+                            {settings.institutionName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
                          </h1>
-                         <h2 className="text-[10.5pt] font-black uppercase leading-none mb-0.5">{roster.title}</h2>
-                         <div className="text-[7.5pt] font-bold uppercase text-black leading-tight">
+                         {settings.unitName && (
+                             <h2 className="font-bold uppercase leading-none mb-0.5" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName}</h2>
+                         )}
+                         <h2 className="font-black uppercase leading-none mb-0.5" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{roster.title}</h2>
+                         <div className="font-bold uppercase text-black leading-tight" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
                              PERÍODO: {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
                        </div>
                        {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
                     </header>
                     {roster.subTitle && (
-                        <div className="bg-[#cbd5b0] border border-black border-b-0 p-0.5 text-center font-bold text-[6.5pt] uppercase mb-0 flex-shrink-0">
+                        <div className="bg-[#cbd5b0] border border-black border-b-0 p-0.5 text-center font-bold uppercase mb-0 flex-shrink-0" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                             {roster.subTitle}
                         </div>
                     )}
                     <div className="border border-black relative flex flex-col">
-                       <table className="w-full table-fixed border-collapse">
+                       <table className="w-full table-fixed border-collapse" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                           <thead>
                             <tr className="h-5">
                                {dates.map((d) => {
@@ -455,15 +464,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
 
                                   return (
                                      <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center`} style={{ width: `${100 / dates.length}%` }}>
-                                        <div className="font-black text-[6.5pt] uppercase leading-none">{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
-                                        <div className="text-[5.5pt] font-bold leading-none mt-0.5">{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                        <div className="font-black uppercase leading-none" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
+                                        <div className="font-bold leading-none mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                         {isHoliday && (
-                                           <div className="mt-0.5 bg-gray-800 text-white text-[5pt] font-black py-0.5 px-0.5 rounded leading-none">
+                                           <div className="mt-0.5 bg-gray-800 text-white font-black py-0.5 px-0.5 rounded leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FERIADO
                                            </div>
                                         )}
                                         {isOptional && (
-                                           <div className="mt-0.5 bg-gray-600 text-white text-[5pt] font-black py-0.5 px-0.5 rounded leading-none">
+                                           <div className="mt-0.5 bg-gray-600 text-white font-black py-0.5 px-0.5 rounded leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FACULTATIVO
                                            </div>
                                         )}
@@ -476,7 +485,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                              {(roster.sections || []).map((sec, sIdx) => (
                                 <React.Fragment key={sIdx}>
                                    <tr className={`h-3.5 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
-                                      <td colSpan={dates.length} className="border border-black p-0 text-center font-bold text-[6.5pt] uppercase tracking-wide leading-none align-middle">
+                                      <td colSpan={dates.length} className="border border-black p-0 text-center font-bold uppercase tracking-wide leading-none align-middle" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                                          {sec.title}
                                       </td>
                                    </tr>
@@ -498,7 +507,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                     rowSpan={isMerged ? sec.rows.length : 1}
                                                     className={`border border-black p-0 text-center align-middle h-auto ${isHoliday ? 'bg-red-50' : 'bg-blue-50'}`}
                                                   >
-                                                     <span className={`text-[6.5pt] font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`}>
+                                                     <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                                                         {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
                                                      </span>
                                                   </td>
@@ -527,18 +536,18 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                        const legend = shift?.note || '';
                                                        return sdr ? (
                                                           <div key={i} className="flex flex-col items-center justify-center w-full leading-none mb-0.5 last:mb-0">
-                                                             <div className="text-[7.5pt] font-bold uppercase text-center w-full break-words tracking-tight leading-tight">
+                                                             <div className="font-bold text-center w-full break-words tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
                                                                 {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
                                                              </div>
                                                              {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
-                                                                <div className="text-[7.5pt] text-gray-600 font-bold mt-0.5 leading-tight">{sdr.phone || '-'}</div>
+                                                                <div className="text-gray-600 font-bold mt-0.5 leading-tight" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
                                                              )}
                                                              {legend && (
-                                                                <div className="text-[6.5pt] font-black text-blue-800 mt-0.5 scale-90 leading-tight">{legend}</div>
+                                                                <div className="font-black text-blue-800 mt-0.5 scale-90 leading-tight" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{legend}</div>
                                                              )}
                                                           </div>
                                                        ) : null;
-                                                    }) : <span className="text-[5.5pt] text-gray-300">-</span>}
+                                                    }) : <span className="text-gray-300" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>-</span>}
                                                  </div>
                                               </td>
                                             );
@@ -553,27 +562,27 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                     <div className="mt-0.5 flex flex-col justify-end h-auto flex-shrink-0">
                          <div className="flex w-full mb-0.5 border-b border-black/10 pb-0.5">
                              <div className="w-1/2 pr-1 border-r border-black/10">
-                                 <div className="text-[5.5pt] leading-tight">
-                                    <span className="font-bold uppercase block text-[5.5pt] text-gray-500 mb-0.5">{roster.observationsTitle || 'OBS'}:</span> 
-                                    {roster.observations}
+                                 <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                    <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{roster.observationsTitle || 'OBS'}:</span> 
+                                    <span style={textTransformStyle}>{roster.observations}</span>
                                  </div>
                              </div>
                              <div className="w-1/2 pl-1">
-                                 <div className="text-[5.5pt] leading-tight">
-                                    <span className="font-bold uppercase block text-[5.5pt] text-gray-500 mb-0.5">ALTERAÇÕES:</span>
-                                    {roster.situationText || 'Sem alterações.'}
+                                 <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                    <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>ALTERAÇÕES:</span>
+                                    <span style={textTransformStyle}>{roster.situationText || 'Sem alterações.'}</span>
                                  </div>
                              </div>
                          </div>
                         <div className="relative mt-0.5">
-                            <div className="absolute right-0 top-0 text-[6.5pt] font-bold">
+                            <div className="absolute right-0 top-0 font-bold" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>
                                 {settings.city}, {creationDateFormatted}
                             </div>
                             <div className="text-center w-1/3 mx-auto mt-1">
                                 <div className="w-full border-b border-black mb-0.5"></div>
-                                <p className="font-bold uppercase text-[6.5pt] leading-none">{settings.directorName} – {settings.directorRank}</p>
-                                <p className="uppercase text-[6.5pt] leading-none mt-0.5">{settings.directorRole}</p>
-                                <p className="uppercase text-[6.5pt] leading-none mt-0.5">{settings.directorMatricula}</p> 
+                                <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                                <p className="uppercase leading-none mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorRole}</p>
+                                <p className="uppercase leading-none mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                             </div>
                         </div>
                     </div>

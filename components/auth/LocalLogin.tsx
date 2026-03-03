@@ -3,6 +3,7 @@ import { db } from '../../services/store';
 import { Lock, Eye, EyeOff, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 
 export const LocalLogin: React.FC = () => {
+  const [email, setEmail] = useState('marcos_notigan@hotmail.com');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,7 @@ export const LocalLogin: React.FC = () => {
   // Reset Password States
   const [isResetting, setIsResetting] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
@@ -21,14 +23,14 @@ export const LocalLogin: React.FC = () => {
     setError('');
 
     try {
-      const { user, error } = await db.login(password);
+      const { user, error } = await db.login(email, password);
       if (user) {
         // Sucesso - o redirecionamento ou atualização de estado acontece via db.subscribe no App.tsx
       } else {
-        setError(error || 'Senha incorreta');
+        setError(error || 'Credenciais incorretas');
       }
     } catch (err) {
-      setError('Erro ao verificar senha');
+      setError('Erro ao verificar credenciais');
     } finally {
       setLoading(false);
     }
@@ -39,6 +41,12 @@ export const LocalLogin: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+
+    if (!resetEmail) {
+      setError('O email é obrigatório');
+      setLoading(false);
+      return;
+    }
 
     if (newPassword !== confirmNewPassword) {
       setError('As senhas não coincidem');
@@ -55,12 +63,13 @@ export const LocalLogin: React.FC = () => {
     try {
       const isKeyValid = db.verifyRecoveryKey(recoveryKey);
       if (isKeyValid) {
-        await db.resetAdminPassword(newPassword);
+        await db.resetAdminPassword(resetEmail, newPassword);
         setSuccess('Usuário criado/senha definida! Faça login agora.');
         setTimeout(() => {
             setIsResetting(false);
             setSuccess('');
             setRecoveryKey('');
+            setResetEmail('');
             setNewPassword('');
             setConfirmNewPassword('');
         }, 3000);
@@ -88,6 +97,19 @@ export const LocalLogin: React.FC = () => {
             <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">Insira a Chave Mestra para redefinir a senha de administrador.</p>
     
             <form onSubmit={handleResetPassword} className="space-y-4 text-left">
+              <div>
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Email do Usuário</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full border border-gray-300 dark:border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-pm-500 transition-all dark:bg-slate-800 dark:text-white"
+                  placeholder="ex: marcos_notigan@hotmail.com ou operador@pmce.gov.br"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                />
+                <p className="text-[10px] text-gray-400 mt-1">* Use um email com "operador" para criar um perfil de Operador.</p>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-gray-500 mb-1">Chave Mestra</label>
                 <input
@@ -173,6 +195,18 @@ export const LocalLogin: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400 mb-8">Acesso Restrito</p>
 
         <form onSubmit={handleLogin} className="space-y-4 text-left">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              className="w-full border border-gray-300 dark:border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-pm-500 transition-all dark:bg-slate-800 dark:text-white"
+              placeholder="Digite seu email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha de Acesso</label>
             <div className="relative">

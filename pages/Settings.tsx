@@ -542,14 +542,17 @@ export const Settings: React.FC = () => {
                     backgroundColor: settings.colorPalette?.headerBg,
                     borderColor: settings.colorPalette?.borderColor,
                     borderWidth: '1px',
-                    borderStyle: 'solid'
+                    borderStyle: 'solid',
+                    fontFamily: settings.appearance?.fontFamily || 'Inter'
                   }}
                 >
                   <div className="p-2 text-center border-b" style={{ borderColor: settings.colorPalette?.borderColor }}>
                     <div className="w-12 h-1 bg-gray-300 mx-auto mb-1 rounded-full opacity-20"></div>
                     <h5 className="text-[8px] font-black uppercase" style={{ color: settings.colorPalette?.headerText }}>Título da Escala</h5>
                   </div>
-                  <table className="w-full text-[6px] border-collapse">
+                  <table className="w-full border-collapse" style={{
+                    fontSize: settings.appearance?.fontSize === 'small' ? '5px' : settings.appearance?.fontSize === 'large' ? '8px' : '6px'
+                  }}>
                     <thead>
                       <tr style={{ backgroundColor: settings.colorPalette?.tableHeaderBg, color: settings.colorPalette?.tableHeaderText }}>
                         <th className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>SETOR</th>
@@ -560,13 +563,22 @@ export const Settings: React.FC = () => {
                     <tbody style={{ backgroundColor: settings.colorPalette?.tableBodyBg, color: settings.colorPalette?.tableBodyText }}>
                       <tr>
                         <td className="border p-1 font-bold" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.tableHeaderBg }}>POSTO 01</td>
-                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>MILITAR A</td>
+                        <td className="border p-1" style={{ 
+                            borderColor: settings.colorPalette?.borderColor,
+                            textTransform: (settings.appearance?.textCase === 'normal' ? 'none' : settings.appearance?.textCase) as any || 'uppercase'
+                        }}>Militar A</td>
                         <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.holidayBg }}>FERIADO</td>
                       </tr>
                       <tr>
                         <td className="border p-1 font-bold" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.tableHeaderBg }}>POSTO 02</td>
-                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.accentColor }}>MILITAR B</td>
-                        <td className="border p-1" style={{ borderColor: settings.colorPalette?.borderColor }}>MILITAR C</td>
+                        <td className="border p-1" style={{ 
+                            borderColor: settings.colorPalette?.borderColor, backgroundColor: settings.colorPalette?.accentColor,
+                            textTransform: (settings.appearance?.textCase === 'normal' ? 'none' : settings.appearance?.textCase) as any || 'uppercase'
+                        }}>Militar B</td>
+                        <td className="border p-1" style={{ 
+                            borderColor: settings.colorPalette?.borderColor,
+                            textTransform: (settings.appearance?.textCase === 'normal' ? 'none' : settings.appearance?.textCase) as any || 'uppercase'
+                        }}>Militar C</td>
                       </tr>
                     </tbody>
                   </table>
@@ -576,6 +588,100 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-4 font-medium italic">Esta é uma simulação visual das cores aplicadas.</p>
+              </div>
+           </div>
+
+           {/* SEÇÃO: TIPOGRAFIA E APARÊNCIA (NOVO) */}
+           <div className="col-span-1 md:col-span-2 border-t pt-6 mt-2">
+              <h4 className="text-sm font-black uppercase text-pm-800 mb-4 flex items-center">
+                <Edit2 size={16} className="mr-2"/> Personalização de Texto (Grade)
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 {/* TIPO DE FONTE */}
+                 <div>
+                    <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Fonte (Família)</label>
+                    <select 
+                      className="w-full p-2 border-2 border-gray-200 rounded-xl text-xs font-bold outline-none focus:border-pm-500"
+                      value={settings.appearance?.fontFamily || 'Inter'}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        appearance: { 
+                          ...(settings.appearance || { fontSize: 'medium', textCase: 'uppercase' }), 
+                          fontFamily: e.target.value 
+                        }
+                      })}
+                    >
+                      <option value="Inter">Inter (Padrão)</option>
+                      <option value="Roboto">Roboto</option>
+                      <option value="Open Sans">Open Sans</option>
+                      <option value="Lato">Lato</option>
+                      <option value="Montserrat">Montserrat</option>
+                      <option value="Courier New">Courier New (Mono)</option>
+                    </select>
+                 </div>
+
+                 {/* TAMANHO DA FONTE */}
+                 <div>
+                    <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Tamanho da Fonte</label>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                       {[
+                         { val: 'small', label: 'Pequeno', icon: 'A', size: 'text-xs' },
+                         { val: 'medium', label: 'Médio', icon: 'A', size: 'text-sm' },
+                         { val: 'large', label: 'Grande', icon: 'A', size: 'text-lg' }
+                       ].map(opt => (
+                         <button
+                           key={opt.val}
+                           onClick={() => setSettings({
+                             ...settings,
+                             appearance: { 
+                               ...(settings.appearance || { fontFamily: 'Inter', textCase: 'uppercase' }), 
+                               fontSize: opt.val as any 
+                             }
+                           })}
+                           className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${
+                             (settings.appearance?.fontSize || 'medium') === opt.val 
+                               ? 'bg-white text-pm-900 shadow-sm ring-1 ring-black/5' 
+                               : 'text-gray-400 hover:text-gray-600'
+                           }`}
+                           title={opt.label}
+                         >
+                           <span className={opt.size}>{opt.icon}</span>
+                         </button>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* CAIXA ALTA / BAIXA */}
+                 <div>
+                    <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Estilo de Texto</label>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                       {[
+                         { val: 'uppercase', label: 'AA' },
+                         { val: 'lowercase', label: 'aa' },
+                         { val: 'capitalize', label: 'Aa' },
+                         { val: 'normal', label: 'Normal' }
+                       ].map(opt => (
+                         <button
+                           key={opt.val}
+                           onClick={() => setSettings({
+                             ...settings,
+                             appearance: { 
+                               ...(settings.appearance || { fontFamily: 'Inter', fontSize: 'medium' }), 
+                               textCase: opt.val as any 
+                             }
+                           })}
+                           className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                             (settings.appearance?.textCase || 'uppercase') === opt.val 
+                               ? 'bg-white text-pm-900 shadow-sm ring-1 ring-black/5' 
+                               : 'text-gray-400 hover:text-gray-600'
+                           }`}
+                         >
+                           {opt.label}
+                         </button>
+                       ))}
+                    </div>
+                 </div>
               </div>
            </div>
         </div>

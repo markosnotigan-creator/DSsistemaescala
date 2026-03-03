@@ -83,6 +83,7 @@ export interface Soldier {
   // Extra Duty Fields
   orderExtra?: number; // Sequência na fila (menor número = topo da fila)
   availableForExtra?: boolean; // Se participa da escala extra
+  birthday?: string; // Data de aniversário (YYYY-MM-DD)
 }
 
 export interface ExtraDutyHistory {
@@ -152,6 +153,22 @@ export interface Roster {
   optionalHolidays?: string[]; // Lista de datas que são ponto facultativo
 }
 
+export interface ColorPalette {
+  id: string;
+  name: string;
+  headerBg: string;
+  headerText: string;
+  tableHeaderBg: string;
+  tableHeaderText: string;
+  tableBodyBg: string;
+  tableBodyText: string;
+  borderColor: string;
+  accentColor: string;
+  holidayBg: string;
+  optionalHolidayBg: string;
+  weekendBg: string;
+}
+
 export interface AppSettings {
   orgName: string;
   directorName: string;
@@ -167,6 +184,13 @@ export interface AppSettings {
   showLogoRight: boolean;
   rosterCategories: RosterCategory[];
   teamMappings?: TeamMapping[];
+  colorPalette?: ColorPalette; // The selected palette object
+  availablePalettes?: ColorPalette[];
+  appearance?: {
+    fontFamily: string;
+    fontSize: 'small' | 'medium' | 'large';
+    textCase: 'uppercase' | 'lowercase' | 'capitalize' | 'normal';
+  };
 }
 
 export interface TeamMapping {
