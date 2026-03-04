@@ -452,13 +452,9 @@ export const Dashboard: React.FC = () => {
     }
 
     // --- CORREÇÃO DE SEGURANÇA: FILTRO ESTRITO DE EQUIPES ---
-    // Garante que militares da TURMA 01 (ou ALFA/BRAVO) NUNCA apareçam na TURMA 02
-    // e vice-versa, independente da projeção ou configuração de ciclo.
-    if (currentTeam2x2Info.name === 'TURMA 02') {
-        members2x2 = members2x2.filter(s => !['TURMA 01', 'ALFA', 'BRAVO'].includes((s.team || '').toUpperCase()));
-    } else if (currentTeam2x2Info.name === 'TURMA 01') {
-        members2x2 = members2x2.filter(s => !['TURMA 02', 'CHARLIE', 'DELTA'].includes((s.team || '').toUpperCase()));
-    }
+    // Removido para o BLOCO #2 (2x2) para permitir que a lógica seja individual por policial,
+    // já que um policial pode trabalhar em dias que correspondem a turmas diferentes.
+    // O filtro estrito impedia que a projeção funcionasse corretamente para esses casos.
 
     setSimResult({ 
       date: targetDate, 
