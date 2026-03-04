@@ -1,4 +1,16 @@
-import { Rank } from './types';
+import { Rank, Role } from './types';
+
+export const getShortRole = (role: Role): string => {
+  switch (role) {
+    case Role.ENFERMEIRO: return '(1)';
+    case Role.TEC_ENF: return '(2)';
+    case Role.MEDICO: return '(3)';
+    case Role.FISCAL: return '(F)';
+    case Role.MOTORISTA: return '(M)';
+    case Role.FISCAL_MOTORISTA: return '(F.M)';
+    default: return '';
+  }
+};
 
 export function getBrazilianHolidays(year: number): string[] {
   return getHolidaysWithNames(year).map(h => h.date).sort();

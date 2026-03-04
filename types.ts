@@ -84,6 +84,7 @@ export interface Soldier {
   orderExtra?: number; // Sequência na fila (menor número = topo da fila)
   availableForExtra?: boolean; // Se participa da escala extra
   birthday?: string; // Data de aniversário (YYYY-MM-DD)
+  pis?: string; // PIS/PASEP
 }
 
 export interface ExtraDutyHistory {

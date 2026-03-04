@@ -695,8 +695,11 @@ export const RosterManager: React.FC = () => {
         if (soldier) {
             const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
             const name = soldier.name.toUpperCase();
-            const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
+            const bDay = soldier.birthday ? new Date(soldier.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00');
+            const day = String(bDay.getDate()).padStart(2, '0');
+            const month = String(bDay.getMonth() + 1).padStart(2, '0');
+            const shiftDate = `${day}/${month}`;
+            const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
             
             if (newSituationText.includes(specificLegend)) {
                 newSituationText = newSituationText.split('\n').filter(line => line.trim() !== specificLegend).join('\n');
@@ -722,8 +725,11 @@ export const RosterManager: React.FC = () => {
     if (soldier) {
         const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
         const name = soldier.name.toUpperCase();
-        const shiftDate = new Date(shiftToUpdate.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
+        const bDay = soldier.birthday ? new Date(soldier.birthday + 'T12:00:00') : new Date(shiftToUpdate.date + 'T12:00:00');
+        const day = String(bDay.getDate()).padStart(2, '0');
+        const month = String(bDay.getMonth() + 1).padStart(2, '0');
+        const shiftDate = `${day}/${month}`;
+        const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
 
         const isAniv = upperNote.startsWith('ANIV');
 
@@ -912,7 +918,7 @@ export const RosterManager: React.FC = () => {
     });
 
     // 2. Militares com ANIV na escala atual (independente de setor)
-    const anivShifts = selectedRoster.shifts.filter(s => s.note === 'ANIV');
+    const anivShifts = selectedRoster.shifts.filter(s => s.note && s.note.startsWith('ANIV'));
     const anivSoldierIds = Array.from(new Set(anivShifts.map(s => s.soldierId)));
     const anivSoldiers = soldiers.filter(s => anivSoldierIds.includes(s.id));
     
@@ -957,8 +963,11 @@ export const RosterManager: React.FC = () => {
       if (s) {
           const rank = getAbbreviatedRank(s.rank).toUpperCase();
           const name = s.name.toUpperCase();
-          const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-          const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
+          const bDay = s.birthday ? new Date(s.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00');
+          const day = String(bDay.getDate()).padStart(2, '0');
+          const month = String(bDay.getMonth() + 1).padStart(2, '0');
+          const shiftDate = `${day}/${month}`;
+          const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
           if (!lines.includes(specificLegend)) {
               lines.push(specificLegend);
           }
@@ -1470,8 +1479,8 @@ export const RosterManager: React.FC = () => {
                                                              title={isAdmin ? "Clique para preencher a lacuna" : ""}
                                                            >
                                                              {legend.trim().toUpperCase().startsWith('ANIV') 
-                                                               ? `ANIV (${new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})` 
-                                                               : (legend || (isAdmin ? '(...)' : ''))}
+                                                             ? `ANIV (${(sdr.birthday ? new Date(sdr.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00')).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})` 
+                                                             : (legend || (isAdmin ? '(...)' : ''))}
                                                            </span>
                                                          )}
 
@@ -1847,9 +1856,11 @@ export const RosterManager: React.FC = () => {
                                                         ) : (
                                                            <span 
                                                               onClick={(e) => { e.stopPropagation(); if(isAdmin) setEditingLegendId(shiftId); }}
-                                                              className={`${isAdmin ? 'cursor-pointer' : ''} ${legend === 'ANIV' ? 'text-green-800 font-black' : (legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden'))}`}
+                                                              className={`${isAdmin ? 'cursor-pointer' : ''} ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800 font-black' : (legend ? (isAdmin ? 'hover:underline' : '') : (isAdmin ? 'opacity-0 group-hover:opacity-30' : 'hidden'))}`}
                                                            >
-                                                              {legend || '(+)'}
+                                                              {legend.trim().toUpperCase().startsWith('ANIV') 
+                                                                 ? `ANIV (${(sdr.birthday ? new Date(sdr.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00')).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`
+                                                                 : (legend || '(+)')}
                                                            </span>
                                                         )}
                                                      </div>

@@ -142,6 +142,8 @@ const INITIAL_TEAM_MAPPINGS: TeamMapping[] = [
 
 const INITIAL_SETTINGS: AppSettings = {
   orgName: 'DIRETORIA DE SAÚDE – PMCE',
+  institutionName: 'POLÍCIA MILITAR DO CEARÁ',
+  unitName: 'COMANDO DE POLICIAMENTO DE CHOQUE',
   directorName: 'FRANCISCO ÉLITON ARAÚJO',
   directorRank: 'Cel PM',
   directorRole: 'Diretor de Saúde - DS/PMCE',

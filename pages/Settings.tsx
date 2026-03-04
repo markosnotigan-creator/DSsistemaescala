@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { db } from '../services/store';
 import { AppSettings, RosterCategory, Soldier, Rank, Role, Status } from '../types';
+import { getShortRole } from '../utils';
 import { Save, Upload, Calendar, MapPin, Layers, Plus, Trash2, Edit2, ShieldAlert, Check, X, Image as ImageIcon, Eye, EyeOff, FileSpreadsheet, Download, Lock, Key, Database, RefreshCw, AlertTriangle, Users, Info, Cloud, Palette } from 'lucide-react';
 
 export const Settings: React.FC = () => {
@@ -186,18 +187,6 @@ export const Settings: React.FC = () => {
   };
 
   // --- LÓGICA DE IMPORTAÇÃO (Excel/Texto) ---
-  const getShortRole = (role: Role): string => {
-    switch (role) {
-      case Role.ENFERMEIRO: return '(1)';
-      case Role.TEC_ENF: return '(2)';
-      case Role.MEDICO: return '(3)';
-      case Role.FISCAL: return '(F)';
-      case Role.MOTORISTA: return '(M)';
-      case Role.FISCAL_MOTORISTA: return '(F.M)';
-      default: return '';
-    }
-  };
-
   const handleImport = () => {
     if (!importText.trim()) return;
 
@@ -781,6 +770,15 @@ export const Settings: React.FC = () => {
            <div className="col-span-2">
              <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Nome da Organização (Cabeçalho)</label>
              <input type="text" className="w-full p-3 border-2 border-gray-100 rounded-xl font-bold uppercase focus:border-pm-700 outline-none" value={settings.orgName || ''} onChange={e => setSettings({...settings, orgName: e.target.value.toUpperCase()})} />
+           </div>
+           
+           <div>
+             <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Instituição (Ex: Polícia Militar do Ceará)</label>
+             <input type="text" className="w-full p-3 border-2 border-gray-100 rounded-xl font-bold uppercase focus:border-pm-700 outline-none" value={settings.institutionName || ''} onChange={e => setSettings({...settings, institutionName: e.target.value.toUpperCase()})} />
+           </div>
+           <div>
+             <label className="text-[10px] font-black uppercase text-pm-500 ml-1 mb-1 block">Unidade (Ex: Comando de Policiamento de Choque)</label>
+             <input type="text" className="w-full p-3 border-2 border-gray-100 rounded-xl font-bold uppercase focus:border-pm-700 outline-none" value={settings.unitName || ''} onChange={e => setSettings({...settings, unitName: e.target.value.toUpperCase()})} />
            </div>
 
            <div>

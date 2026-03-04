@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../services/store';
 import { Soldier, Rank, Role, Status, Cadre } from '../types';
+import { getShortRole } from '../utils';
 import { Plus, Search, Edit2, Trash2, UserX, UserCheck, FileSpreadsheet, Coffee, Save, X, Shield, AlertTriangle, ListOrdered } from 'lucide-react';
 
 export const Personnel: React.FC = () => {
@@ -31,18 +32,6 @@ export const Personnel: React.FC = () => {
 
   const loadData = () => {
     setSoldiers(db.getSoldiers());
-  };
-
-  const getShortRole = (role: Role): string => {
-    switch (role) {
-      case Role.ENFERMEIRO: return '(1)';
-      case Role.TEC_ENF: return '(2)';
-      case Role.MEDICO: return '(3)';
-      case Role.FISCAL: return '(F)';
-      case Role.MOTORISTA: return '(M)';
-      case Role.FISCAL_MOTORISTA: return '(F.M)';
-      default: return '';
-    }
   };
 
   const handleSave = () => {
@@ -75,7 +64,7 @@ export const Personnel: React.FC = () => {
       rank: formData.rank as Rank,
       cadre: formData.cadre || Cadre.QOPPM,
       role: formData.role as Role,
-      roleShort: formData.roleShort || getShortRole(formData.role as Role),
+      roleShort: formData.roleShort ?? getShortRole(formData.role as Role),
       sector: formData.sector || 'Geral',
       team: formData.team || '',
       status: formData.status as Status,
