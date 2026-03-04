@@ -315,6 +315,9 @@ export const Dashboard: React.FC = () => {
   const getCycleIndex = (targetDateStr: string, refDateStr: string) => {
     const refDate = new Date(refDateStr + 'T12:00:00');
     const targetDate = new Date(targetDateStr + 'T12:00:00');
+    
+    if (isNaN(refDate.getTime()) || isNaN(targetDate.getTime())) return 0;
+
     const diffTime = targetDate.getTime() - refDate.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return ((diffDays % 4) + 4) % 4;
@@ -337,6 +340,9 @@ export const Dashboard: React.FC = () => {
       { name: 'CHARLIE', color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800' }, 
       { name: 'DELTA', color: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800' }    
     ];
+
+    // Safety check
+    if (!teams24Defs[cycleIndex]) return;
 
     const teams2x2Defs = [
       { name: 'TURMA 01', color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800' },

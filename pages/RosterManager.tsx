@@ -696,7 +696,7 @@ export const RosterManager: React.FC = () => {
             const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
             const name = soldier.name.toUpperCase();
             const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-            const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
+            const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
             
             if (newSituationText.includes(specificLegend)) {
                 newSituationText = newSituationText.split('\n').filter(line => line.trim() !== specificLegend).join('\n');
@@ -723,7 +723,7 @@ export const RosterManager: React.FC = () => {
         const rank = getAbbreviatedRank(soldier.rank).toUpperCase();
         const name = soldier.name.toUpperCase();
         const shiftDate = new Date(shiftToUpdate.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
+        const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
 
         const isAniv = upperNote.startsWith('ANIV');
 
@@ -958,7 +958,7 @@ export const RosterManager: React.FC = () => {
           const rank = getAbbreviatedRank(s.rank).toUpperCase();
           const name = s.name.toUpperCase();
           const shiftDate = new Date(shift.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-          const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensado do serviço em virtude de seu aniversário.`;
+          const specificLegend = `ANIV(${shiftDate}) - ${rank} ${name} - Dispensa Natalícia.`;
           if (!lines.includes(specificLegend)) {
               lines.push(specificLegend);
           }

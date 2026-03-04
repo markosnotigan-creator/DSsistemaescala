@@ -269,8 +269,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                     <header className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
                         {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="PMCE" />}
                         <div className="flex-1 text-center px-4">
-                            <h2 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>{settings.institutionName || 'POLÍCIA MILITAR DO CEARÁ'}</h2>
-                            <h3 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName || 'COMANDO DE POLICIAMENTO DE CHOQUE'}</h3>
+                            <h2 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>{settings.orgName || 'POLÍCIA MILITAR DO CEARÁ'}</h2>
+                            <h3 className="font-bold uppercase" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{'COMANDO DE POLICIAMENTO DE CHOQUE'}</h3>
                         </div>
                         {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="h-16 w-auto object-contain" alt="Gov" />}
                     </header>
@@ -278,7 +278,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                         <h1 className="font-bold uppercase leading-tight" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>{roster.title}</h1>
                     </div>
                     <div className="mb-2 text-left flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
-                        <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span style={textTransformStyle}>{roster.observations}</span>
+                        <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span style={textTransformStyle} className="whitespace-pre-wrap">{roster.observations}</span>
                     </div>
                     <div className="flex-1 relative">
                         <table className="w-full border-collapse border border-black table-auto" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
@@ -322,9 +322,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                      {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                      <div className="mx-20">
                        <h1 className="font-bold uppercase tracking-wide text-gray-800" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
-                         {settings.institutionName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
+                         {settings.orgName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
                        </h1>
-                       <h2 className="font-black uppercase tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName || roster.title}</h2>
+                       <h2 className="font-black uppercase tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{roster.title}</h2>
                        <div className="font-bold uppercase" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>DO DIA {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
                      </div>
                      {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
@@ -407,11 +407,11 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                      <div className="flex w-full mb-1 border border-black p-1 bg-white">
                          <div className="w-1/2 pr-1 border-r border-black">
                              <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>OBSERVAÇÕES:</span> 
-                             <div className="leading-tight">{roster.observations}</div>
+                             <div className="leading-tight whitespace-pre-wrap">{roster.observations}</div>
                          </div>
                          <div className="w-1/2 pl-1">
                              <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>ALTERAÇÕES:</span>
-                             <div className="leading-tight">{roster.situationText || 'Sem alterações.'}</div>
+                             <div className="leading-tight whitespace-pre-wrap">{roster.situationText || 'Sem alterações.'}</div>
                          </div>
                      </div>
                      <div className="text-right font-bold mt-1">{settings.city}, {creationDateFormatted}</div>
@@ -431,11 +431,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
                        <div className="mx-20 w-full">
                          <h1 className="font-bold uppercase tracking-tight leading-none mb-0.5" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
-                            {settings.institutionName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
+                            {settings.orgName || cleanHeaderTitle || 'POLÍCIA MILITAR DO CEARÁ'}
                          </h1>
-                         {settings.unitName && (
-                             <h2 className="font-bold uppercase leading-none mb-0.5" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{settings.unitName}</h2>
-                         )}
                          <h2 className="font-black uppercase leading-none mb-0.5" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{roster.title}</h2>
                          <div className="font-bold uppercase text-black leading-tight" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
                              PERÍODO: {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -564,13 +561,13 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                              <div className="w-1/2 pr-1 border-r border-black/10">
                                  <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                     <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{roster.observationsTitle || 'OBS'}:</span> 
-                                    <span style={textTransformStyle}>{roster.observations}</span>
+                                    <span style={textTransformStyle} className="whitespace-pre-wrap">{roster.observations}</span>
                                  </div>
                              </div>
                              <div className="w-1/2 pl-1">
                                  <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                     <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>ALTERAÇÕES:</span>
-                                    <span style={textTransformStyle}>{roster.situationText || 'Sem alterações.'}</span>
+                                    <span style={textTransformStyle} className="whitespace-pre-wrap">{roster.situationText || 'Sem alterações.'}</span>
                                  </div>
                              </div>
                          </div>
