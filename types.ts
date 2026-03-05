@@ -48,7 +48,11 @@ export enum Status {
   DISPENSA = 'Dispensa',
   FOLGA = 'Folga',
   CURSO = 'Curso',
-  AFASTADO = 'Afastado' // Genérico
+  AFASTADO = 'Afastado', // Genérico
+  NUPCIAS = 'Núpcias',
+  DISPENSA_ART_68 = 'Dispensa de Serviço (Art. 68)',
+  LICENCA_PATERNIDADE = 'Licença Paternidade',
+  LICENCA_MATERNIDADE = 'Licença Maternidade'
 }
 
 export interface BankTransaction {
@@ -172,6 +176,8 @@ export interface ColorPalette {
 
 export interface AppSettings {
   orgName: string;
+  institutionName?: string;
+  unitName?: string;
   directorName: string;
   directorRank: string;
   directorRole: string;
