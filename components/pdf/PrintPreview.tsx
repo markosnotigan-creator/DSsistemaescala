@@ -160,8 +160,28 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     const textStyle = { textTransform: getPrintTextTransform(appearance.textCase) as any };
 
     if (h.includes('GRAD') || h.includes('POSTO')) return <span style={textStyle}>{getAbbreviatedRank(s.rank)}</span>;
-    if (h.includes('COMPLETO')) return <span className="text-left block pl-2" style={textStyle}>{s.fullName || s.name}</span>;
-    if (h.includes('NOME')) return <div className="text-left pl-2 truncate" style={textStyle}>{s.name}</div>;
+    if (h.includes('COMPLETO')) {
+      const fullName = s.fullName || s.name;
+      let displayName: React.ReactNode = fullName;
+      
+      if (s.fullName && s.name) {
+        try {
+          const regex = new RegExp(`(${s.name})`, 'gi');
+          const parts = s.fullName.split(regex);
+          displayName = parts.map((part: string, i: number) => 
+            part.toLowerCase() === s.name.toLowerCase() ? <strong key={i} className="font-black">{part}</strong> : part
+          );
+        } catch (e) {
+          // Fallback if regex fails (e.g. invalid characters in name)
+          displayName = fullName;
+        }
+      } else if (!s.fullName) {
+        displayName = <strong className="font-black">{s.name}</strong>;
+      }
+
+      return <span className="text-center block" style={textStyle}>{displayName}</span>;
+    }
+    if (h.includes('NOME')) return <div className="text-center truncate font-black" style={textStyle}>{s.name}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
     if (h === 'PIS' || h.includes('PIS')) return s.pis || '-';
@@ -272,22 +292,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                            <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-1/2 -translate-y-1/2 h-16 w-16 object-contain" alt="Logo Esq" />
                        )}
                        
-                       <div className="flex flex-col items-center justify-center w-full px-24">
+                       <div className="flex flex-col items-center justify-center w-full px-24 text-center">
                          <div
                             contentEditable
                             suppressContentEditableWarning
-                            className="w-full text-center font-bold uppercase tracking-tight leading-none mb-0.5 outline-none"
-                            style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}
+                            className="w-full text-center font-black uppercase tracking-tight leading-none mb-0.5 bg-transparent border-none outline-none"
+                            style={{ fontSize: '16pt' }}
                          >
                             DIRETORIA DE SAUDE - PMCE
-                         </div>
-                         <div
-                            contentEditable
-                            suppressContentEditableWarning
-                            className="w-full text-center font-black uppercase leading-none mb-0.5 outline-none"
-                            style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}
-                         >
-                            ESCALAS
                          </div>
                        </div>
 
@@ -295,6 +307,18 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                            <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-1/2 -translate-y-1/2 h-16 w-16 object-contain" alt="Logo Dir" />
                        )}
                     </header>
+                    
+                    <div className="mb-2 w-full flex justify-center flex-shrink-0 text-center">
+                         <div
+                            contentEditable
+                            suppressContentEditableWarning
+                            className="w-full text-center font-black uppercase outline-none bg-transparent border-none"
+                            style={{ fontSize: '14pt' }}
+                         >
+                            {roster.title}
+                         </div>
+                    </div>
+
                     <div className="mb-2 text-left flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
                         <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span style={textTransformStyle}>{roster.observations}</span>
                     </div>
