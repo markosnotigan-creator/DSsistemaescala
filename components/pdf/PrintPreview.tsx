@@ -166,13 +166,21 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
       
       if (s.fullName && s.name) {
         try {
-          const regex = new RegExp(`(${s.name})`, 'gi');
+          // Split short name into words and escape each part
+          const nameParts = s.name.trim().split(/\s+/).filter(Boolean);
+          // Sort by length descending to match longer words first
+          nameParts.sort((a, b) => b.length - a.length);
+          
+          const escapedParts = nameParts.map((part: string) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+          const regex = new RegExp(`(${escapedParts.join('|')})`, 'gi');
+          
           const parts = s.fullName.split(regex);
-          displayName = parts.map((part: string, i: number) => 
-            part.toLowerCase() === s.name.toLowerCase() ? <strong key={i} className="font-black">{part}</strong> : part
-          );
+          displayName = parts.map((part: string, i: number) => {
+            const isMatch = nameParts.some(np => np.toLowerCase() === part.toLowerCase());
+            return isMatch ? <strong key={i} className="font-black">{part}</strong> : part;
+          });
         } catch (e) {
-          // Fallback if regex fails (e.g. invalid characters in name)
+          // Fallback if regex fails
           displayName = fullName;
         }
       } else if (!s.fullName) {
@@ -300,6 +308,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             style={{ fontSize: '16pt' }}
                          >
                             DIRETORIA DE SAUDE - PMCE
+                         </div>
+                         <div
+                            contentEditable
+                            suppressContentEditableWarning
+                            className="w-full text-center font-bold uppercase leading-none mb-0.5 bg-transparent border-none outline-none"
+                            style={{ fontSize: '12pt' }}
+                         >
+                            ESCALA EXTRA
                          </div>
                        </div>
 
@@ -582,7 +598,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                        return sdr ? (
                                                           <div key={i} className="flex flex-col items-center justify-center w-full leading-none mb-0.5 last:mb-0">
                                                              <div className="font-bold text-center w-full break-words tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
-                                                                {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name.split(' ')[0]} {sdr.roleShort}
+                                                                {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name}
                                                              </div>
                                                              {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
                                                                 <div className="text-gray-600 font-bold mt-0.5 leading-tight" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
