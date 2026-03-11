@@ -8,12 +8,16 @@ import { RosterManager } from './pages/RosterManager';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { LocalLogin } from './components/auth/LocalLogin';
+import { PublicRosters } from './pages/PublicRosters';
 import { db } from './services/store';
 import { User } from './types';
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState<User | null>(db.getCurrentUser());
+
+  // Check if current path is public
+  const isPublicPath = window.location.pathname === '/public-rosters';
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -80,39 +84,50 @@ function App() {
     }
   };
 
-  if (!user) {
-    return <LocalLogin />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Route */}
+        <Route path="/public-rosters" element={<PublicRosters />} />
+        
+        {/* Auth Routes */}
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LocalLogin />} />
+
+        {/* Protected Routes */}
         <Route path="/" element={
-          <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
-            <Dashboard />
-          </Layout>
+          user ? (
+            <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
+              <Dashboard />
+            </Layout>
+          ) : <Navigate to="/login" replace />
         } />
 
         <Route path="/personnel" element={
-          <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
-            <Personnel />
-          </Layout>
+          user ? (
+            <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
+              <Personnel />
+            </Layout>
+          ) : <Navigate to="/login" replace />
         } />
 
         <Route path="/rosters" element={
-          <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
-            <RosterManager />
-          </Layout>
+          user ? (
+            <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
+              <RosterManager />
+            </Layout>
+          ) : <Navigate to="/login" replace />
         } />
 
         <Route path="/reports" element={
-          <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
-            <Reports />
-          </Layout>
+          user ? (
+            <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
+              <Reports />
+            </Layout>
+          ) : <Navigate to="/login" replace />
         } />
 
         <Route path="/settings" element={
-          user.role === 'ADMIN' ? (
+          user?.role === 'ADMIN' ? (
             <Layout isDarkMode={isDarkMode} toggleTheme={toggleTheme}>
               <Settings />
             </Layout>

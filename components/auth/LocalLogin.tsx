@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../../services/store';
 import { Lock, Eye, EyeOff, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 
 export const LocalLogin: React.FC = () => {
-  const [email, setEmail] = useState('marcos_notigan@hotmail.com');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export const LocalLogin: React.FC = () => {
                   type="email"
                   required
                   className="w-full border border-gray-300 dark:border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-pm-500 transition-all dark:bg-slate-800 dark:text-white"
-                  placeholder="ex: marcos_notigan@hotmail.com ou operador@pmce.gov.br"
+                  placeholder="ex: admin@pmce.gov.br ou operador@pmce.gov.br"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                 />
@@ -251,6 +253,24 @@ export const LocalLogin: React.FC = () => {
             className="w-full bg-pm-700 hover:bg-pm-800 disabled:bg-pm-400 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg flex justify-center items-center space-x-2"
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : <span>Entrar</span>}
+          </button>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200 dark:border-slate-800"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white dark:bg-slate-900 px-2 text-gray-400 font-bold">Ou</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/public-rosters')}
+            className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black py-3 px-4 rounded-lg transition flex justify-center items-center space-x-2 uppercase text-xs tracking-widest border border-slate-200 dark:border-slate-700"
+          >
+            <Eye size={18} />
+            <span>Visualizar Escalas</span>
           </button>
         </form>
       </div>

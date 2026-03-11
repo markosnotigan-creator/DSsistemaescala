@@ -1270,10 +1270,33 @@ export const RosterManager: React.FC = () => {
                      <input 
                        readOnly={!isAdmin}
                        className={`w-full text-center text-[12pt] font-black uppercase tracking-tight leading-tight outline-none text-black ${isAdmin ? 'hover:bg-gray-50 focus:bg-yellow-50' : 'pointer-events-none'}`}
-                       value={selectedRoster.title}
-                       onChange={e => updateRoster({...selectedRoster, title: e.target.value.toUpperCase()})}
-                     />
-                     <div className="text-[9pt] font-bold uppercase text-black">DO DIA {new Date(selectedRoster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(selectedRoster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
+                        value={selectedRoster.title}
+                        onChange={e => updateRoster({...selectedRoster, title: e.target.value.toUpperCase()})}
+                      />
+                      <div className="text-[9pt] font-bold uppercase text-black flex items-center justify-center space-x-1 group">
+                          <span>DO DIA</span>
+                          <div className="relative flex items-center">
+                            <input 
+                              readOnly={!isAdmin}
+                              type="date" 
+                              className={`bg-transparent font-bold outline-none text-center w-28 text-black ${isAdmin ? 'hover:bg-gray-100 cursor-pointer' : 'pointer-events-none'}`}
+                              value={selectedRoster.startDate}
+                              onChange={e => updateRoster({...selectedRoster, startDate: e.target.value})}
+                            />
+                            {isAdmin && <Calendar size={10} className="absolute right-0 text-gray-400 pointer-events-none opacity-0 group-hover:opacity-100" />}
+                          </div>
+                          <span>A</span>
+                          <div className="relative flex items-center">
+                            <input 
+                              readOnly={!isAdmin}
+                              type="date" 
+                              className={`bg-transparent font-bold outline-none text-center w-28 text-black ${isAdmin ? 'hover:bg-gray-100 cursor-pointer' : 'pointer-events-none'}`}
+                              value={selectedRoster.endDate}
+                              onChange={e => updateRoster({...selectedRoster, endDate: e.target.value})}
+                            />
+                            {isAdmin && <Calendar size={10} className="absolute right-0 text-gray-400 pointer-events-none opacity-0 group-hover:opacity-100" />}
+                          </div>
+                       </div>
                    </div>
                    {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                 </header>
@@ -1571,12 +1594,27 @@ export const RosterManager: React.FC = () => {
                       </div>
                    </div>
                    
-                   <div className="text-right font-bold">{settings.city}, {new Date().toLocaleDateString('pt-BR', {day: 'numeric', month: 'long', year: 'numeric'})}</div>
-                   <div className="text-center w-1/3 mx-auto mt-4">
-                      <div className="w-full border-b border-black mb-0.5"></div>
-                      <p className="font-bold uppercase text-[8pt] leading-none">{settings.directorName} – {settings.directorRank}</p>
-                      <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorRole}</p>
-                      <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorMatricula}</p> 
+                   <div className="flex flex-col items-center justify-center mt-2 relative group">
+                      <div className="absolute right-0 top-0 text-[8pt] font-bold text-black flex items-center">
+                         {settings.city}, 
+                         <div className="relative flex items-center">
+                           <input 
+                             readOnly={!isAdmin}
+                             type="date" 
+                             className={`bg-transparent font-bold ml-1 outline-none text-right cursor-pointer w-24 text-black ${isAdmin ? '' : 'pointer-events-none'}`}
+                             value={selectedRoster.creationDate || new Date().toISOString().split('T')[0]}
+                             onChange={e => updateRoster({...selectedRoster, creationDate: e.target.value})}
+                           />
+                           {isAdmin && <Calendar size={10} className="ml-1 text-gray-400 pointer-events-none opacity-0 group-hover:opacity-100" />}
+                         </div>
+                      </div>
+
+                      <div className="text-center w-1/3 mx-auto mt-4">
+                         <div className="w-full border-b border-black mb-0.5"></div>
+                         <p className="font-bold uppercase text-[8pt] leading-none">{settings.directorName} – {settings.directorRank}</p>
+                         <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorRole}</p>
+                         <p className="uppercase text-[7pt] leading-none mt-1">{settings.directorMatricula}</p> 
+                      </div>
                    </div>
                 </div>
              </div>
