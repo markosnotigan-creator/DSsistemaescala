@@ -31,9 +31,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, isDarkMode, toggleThem
   const isAdmin = user.role === 'ADMIN';
   const isOperator = isAdmin || user.role === 'USER'; // Adjusting logic for simplified roles
   
-  const signOut = () => {
-    sessionStorage.removeItem('current_user');
-    window.location.href = '/';
+  const signOut = async () => {
+    await db.logout();
   };
   
   // Estado para o evento de instalação (PWA)

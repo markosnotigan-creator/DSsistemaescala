@@ -312,7 +312,7 @@ export const Dashboard: React.FC = () => {
     alert("Fila reiniciada por antiguidade.");
   };
 
-  const getCycleIndex = (targetDateStr: string, refDateStr: string) => {
+    const getCycleIndex = (targetDateStr: string, refDateStr: string) => {
     const refDate = new Date(refDateStr + 'T12:00:00');
     const targetDate = new Date(targetDateStr + 'T12:00:00');
     
@@ -349,11 +349,9 @@ export const Dashboard: React.FC = () => {
       { name: 'TURMA 02', color: 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800' }
     ];
 
-    const currentTeamName = teams24Defs[cycleIndex].name;
-    const mapping = settings.teamMappings?.find(m => m.teamName === currentTeamName);
-    const team2x2Name = mapping ? mapping.shiftName : ((cycleIndex === 0 || cycleIndex === 1) ? 'TURMA 01' : 'TURMA 02');
-
     const currentTeam24Info = teams24Defs[cycleIndex];
+    const mapping = settings.teamMappings?.find(m => m.teamName === currentTeam24Info.name);
+    const team2x2Name = mapping ? mapping.shiftName : ((cycleIndex === 0 || cycleIndex === 1) ? 'TURMA 01' : 'TURMA 02');
     const currentTeam2x2Info = teams2x2Defs.find(t => t.name === team2x2Name) || teams2x2Defs[0];
 
     const activeRoster = rosters
@@ -425,20 +423,21 @@ export const Dashboard: React.FC = () => {
            const projIds24 = Array.from(projected24h[cycleIndex] || []);
            const projIds2x2 = Array.from(projected2x2[cycleIndex] || []);
 
-           members24 = projIds24.map(id => soldiers.find(s => s.id === id)).filter(Boolean) as Soldier[];
-           members2x2 = projIds2x2.map(id => soldiers.find(s => s.id === id)).filter(Boolean) as Soldier[];
+           // --- CORREÇÃO: Filtrar projeção pelo vínculo de equipe do militar ---
+           members24 = projIds24
+            .map(id => soldiers.find(s => s.id === id))
+            .filter(s => s && s.status === 'Ativo' && s.team === currentTeam24Info.name) as Soldier[];
+           
+           // Para 2x2, permitimos independência da turma exata, pois policiais podem ter offsets no ciclo
+           members2x2 = projIds2x2
+            .map(id => soldiers.find(s => s.id === id))
+            .filter(s => s && s.status === 'Ativo' && s.team?.toUpperCase().includes('TURMA')) as Soldier[];
 
            if (members24.length === 0) {
               members24 = soldiers.filter(s => s.team === currentTeam24Info.name && s.status === 'Ativo');
            }
            if (members2x2.length === 0) {
-              // Fix: Ensure we don't include soldiers who are actually in the 24h team (e.g. ALFA/BRAVO mapped to TURMA 01)
-              // This prevents 1ºSgt Fernandes (ALFA/TURMA 01) from appearing in 2x2 (TURMA 01)
-              members2x2 = soldiers.filter(s => 
-                  s.team === currentTeam2x2Info.name && 
-                  s.status === 'Ativo' &&
-                  s.team !== currentTeam24Info.name // Exclude if their team matches the current 24h team name
-              );
+              members2x2 = soldiers.filter(s => s.team === currentTeam2x2Info.name && s.status === 'Ativo');
            }
 
         } else {
@@ -447,20 +446,9 @@ export const Dashboard: React.FC = () => {
            isTheoretical = true;
 
            members24 = soldiers.filter(s => s.team === currentTeam24Info.name && s.status === 'Ativo');
-           
-           // Fix: Same protection for the static calculation fallback
-           members2x2 = soldiers.filter(s => 
-               s.team === currentTeam2x2Info.name && 
-               s.status === 'Ativo' &&
-               s.team !== currentTeam24Info.name
-           );
+           members2x2 = soldiers.filter(s => s.team === currentTeam2x2Info.name && s.status === 'Ativo');
         }
     }
-
-    // --- CORREÇÃO DE SEGURANÇA: FILTRO ESTRITO DE EQUIPES ---
-    // Removido para o BLOCO #2 (2x2) para permitir que a lógica seja individual por policial,
-    // já que um policial pode trabalhar em dias que correspondem a turmas diferentes.
-    // O filtro estrito impedia que a projeção funcionasse corretamente para esses casos.
 
     setSimResult({ 
       date: targetDate, 

@@ -230,7 +230,8 @@ export const RosterManager: React.FC = () => {
     if (!settings.shiftCycleRefDate) return 0;
     const refDate = new Date(settings.shiftCycleRefDate + 'T12:00:00');
     const targetDate = new Date(dateObj.toISOString().split('T')[0] + 'T12:00:00');
-    const diffDays = Math.floor((targetDate.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24));
+    const diffTime = targetDate.getTime() - refDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return ((diffDays % 4) + 4) % 4; // 0, 1, 2, 3
   };
 
@@ -329,8 +330,19 @@ export const RosterManager: React.FC = () => {
                         soldierIds.forEach(sId => {
                             const soldier = soldiers.find(s => s.id === sId);
                             if (soldier && soldier.status === Status.ATIVO) {
-                                generatedShifts.push({ date: dateStr, period: row.id, soldierId: soldier.id });
-                                hasProjectedData = true;
+                                // --- CORREÇÃO: Filtrar projeção pelo vínculo de equipe do militar ---
+                                const is24hRow = sec.title.toUpperCase().includes('24H') || sec.title.toUpperCase().includes('BLOCO #1');
+                                const is2x2Row = sec.title.toUpperCase().includes('2X2') || sec.title.toUpperCase().includes('BLOCO #2');
+                                
+                                let canAssign = true;
+                                if (is24hRow && soldier.team !== cycle.team24.name) canAssign = false;
+                                // Para 2x2, permitimos independência da turma exata, pois policiais podem ter offsets no ciclo
+                                if (is2x2Row && !soldier.team?.toUpperCase().includes('TURMA')) canAssign = false;
+
+                                if (canAssign) {
+                                    generatedShifts.push({ date: dateStr, period: row.id, soldierId: soldier.id });
+                                    hasProjectedData = true;
+                                }
                             }
                         });
                     }

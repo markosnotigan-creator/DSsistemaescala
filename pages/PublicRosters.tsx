@@ -3,8 +3,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/store';
 import { Roster } from '../types';
-import { FileText, Calendar, Clock, Eye, Search, ArrowLeft, ShieldAlert, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, Calendar, Clock, Eye, Search, ArrowLeft, ShieldAlert, Loader2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { PrintPreview } from '../components/pdf/PrintPreview';
+import { ServiceCycleSimulator } from '../components/simulator/ServiceCycleSimulator';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const PublicRosters: React.FC = () => {
@@ -13,6 +14,7 @@ export const PublicRosters: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingRoster, setViewingRoster] = useState<Roster | null>(null);
+  const [showSimulator, setShowSimulator] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const settings = db.getSettings();
@@ -108,6 +110,14 @@ export const PublicRosters: React.FC = () => {
           </div>
         </div>
         <div className="hidden md:flex items-center space-x-2 bg-pm-50 dark:bg-slate-800 px-4 py-2 rounded-xl border border-pm-100 dark:border-slate-700">
+          <button 
+            onClick={() => setShowSimulator(true)}
+            className="flex items-center space-x-2 text-pm-700 dark:text-pm-300 hover:text-pm-900 dark:hover:text-white transition-all"
+          >
+            <Users size={18}/>
+            <span className="text-[10px] font-black uppercase">Simulador</span>
+          </button>
+          <div className="w-px h-4 bg-pm-200 dark:bg-slate-700" />
           <ShieldAlert className="text-pm-600 dark:text-pm-400" size={18}/>
           <span className="text-[10px] font-black text-pm-700 dark:text-pm-300 uppercase">Somente Visualização</span>
         </div>
@@ -273,6 +283,11 @@ export const PublicRosters: React.FC = () => {
       {/* Print Preview Modal */}
       {viewingRoster && (
         <PrintPreview roster={viewingRoster} onClose={() => setViewingRoster(null)} />
+      )}
+
+      {/* Simulator Modal */}
+      {showSimulator && (
+        <ServiceCycleSimulator onClose={() => setShowSimulator(false)} />
       )}
     </div>
   );
