@@ -118,6 +118,7 @@ export interface Shift {
   soldierId: string;
   note?: string; 
   customData?: Record<string, string>; // Dados para colunas dinâmicas (chave = indice da coluna)
+  isHidden?: boolean; // Ocultar policial em feriados/facultativos
 }
 
 export interface RosterRow {

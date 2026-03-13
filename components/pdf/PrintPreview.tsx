@@ -395,10 +395,17 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                              {dates.map(d => {
                                 const dStr = d.toISOString().split('T')[0];
                                 const isHoliday = roster.holidays?.includes(dStr);
+                                const isOptional = roster.optionalHolidays?.includes(dStr);
+                                
+                                let bgClass = 'bg-[#e4e9d6]';
+                                if (isHoliday) bgClass = 'bg-red-100';
+                                if (isOptional) bgClass = 'bg-blue-100';
+
                                 return (
-                                   <th key={d.toISOString()} className={`border border-black ${isHoliday ? 'bg-gray-200' : 'bg-[#e4e9d6]'} p-0.5 text-center uppercase`}>
+                                   <th key={d.toISOString()} className={`border border-black ${bgClass} p-0.5 text-center uppercase`}>
                                       <div className="font-bold" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]} {d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
-                                      {isHoliday && <div className="font-black" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>FERIADO</div>}
+                                      {isHoliday && <div className="mt-0.5 bg-red-600 text-white font-black py-0.5 px-1 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>FERIADO</div>}
+                                      {isOptional && <div className="mt-0.5 bg-blue-600 text-white font-black py-0.5 px-1 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>FACULTATIVO</div>}
                                    </th>
                                 );
                              })}
@@ -416,18 +423,6 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
  
                                    const isOptional = roster.optionalHolidays?.includes(dStr);
  
-                                   if (isHoliday || isOptional) {
-                                      return (
-                                         <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 align-middle text-center h-auto ${isHoliday ? 'bg-gray-100' : 'bg-blue-50'}`}>
-                                            <div className="flex flex-col space-y-1 h-full justify-center">
-                                                <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
-                                                   {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
-                                                </span>
-                                            </div>
-                                         </td>
-                                      );
-                                   }
- 
                                    const shiftsInCell = roster.shifts
                                      .filter(s => s.date === dStr && s.period === row.id)
                                      .sort((a, b) => {
@@ -436,10 +431,28 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                         if (!sA || !sB) return 0;
                                         return getRankWeight(sA.rank) - getRankWeight(sB.rank);
                                      });
+
+                                   let cellBgClass = row.bgClass || '';
+                                   if (shiftsInCell.some(s => s.note === 'ANIV')) {
+                                      cellBgClass = 'bg-green-100';
+                                   } else if (isHoliday) {
+                                      cellBgClass = 'bg-red-50/50';
+                                   } else if (isOptional) {
+                                      cellBgClass = 'bg-blue-50/50';
+                                   }
+
                                    return (
-                                      <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 align-top text-center h-auto ${row.bgClass || ''}`}>
+                                      <td key={`${row.id}-${dStr}`} className={`border border-black p-0.5 ${shiftsInCell.length > 0 ? 'align-top' : 'align-middle'} text-center h-auto ${cellBgClass}`}>
+                                         {(isHoliday || isOptional) && (
+                                            <div className={`flex flex-col space-y-1 justify-center ${shiftsInCell.length > 0 ? 'mb-0.5' : ''}`}>
+                                                <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`} style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                                   {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
+                                                </span>
+                                            </div>
+                                         )}
                                          <div className="flex flex-col space-y-0.5">
                                              {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
+                                               if (shift.isHidden) return null;
                                                const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                // IMPRESSÃO GRADE (ADM/AST/CUSTOM): Só mostra a nota preenchida na lacuna
                                                const legend = shift.note || '';
@@ -457,7 +470,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                      )}
                                                   </div>
                                                ) : null;
-                                            }) : <span className="text-gray-300 font-bold" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>***</span>}
+                                            }) : (
+                                               !(isHoliday || isOptional) && <span className="text-gray-300 font-bold" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>***</span>
+                                            )}
                                          </div>
                                       </td>
                                    );
@@ -520,20 +535,20 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                   const isOptional = !isAmbulancia && roster.optionalHolidays?.includes(dStr);
                                   
                                   let bgClass = 'bg-[#e4e9d6]';
-                                  if (isHoliday) bgClass = 'bg-gray-200';
-                                  if (isOptional) bgClass = 'bg-gray-100';
+                                  if (isHoliday) bgClass = 'bg-red-100';
+                                  if (isOptional) bgClass = 'bg-blue-100';
 
                                   return (
                                      <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center`} style={{ width: `${100 / dates.length}%` }}>
                                         <div className="font-black uppercase leading-none" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
                                         <div className="font-bold leading-none mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                         {isHoliday && (
-                                           <div className="mt-0.5 bg-gray-800 text-white font-black py-0.5 px-0.5 rounded leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                           <div className="mt-0.5 bg-red-600 text-white font-black py-0.5 px-0.5 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FERIADO
                                            </div>
                                         )}
                                         {isOptional && (
-                                           <div className="mt-0.5 bg-gray-600 text-white font-black py-0.5 px-0.5 rounded leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                           <div className="mt-0.5 bg-blue-600 text-white font-black py-0.5 px-0.5 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FACULTATIVO
                                            </div>
                                         )}
@@ -561,20 +576,6 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                             
                                             if (isMerged && rIdx > 0) return null;
 
-                                            if (isHoliday || isOptional) {
-                                                return (
-                                                  <td 
-                                                    key={`${row.id}-${dStr}`} 
-                                                    rowSpan={isMerged ? sec.rows.length : 1}
-                                                    className={`border border-black p-0 text-center align-middle h-auto ${isHoliday ? 'bg-red-50' : 'bg-blue-50'}`}
-                                                  >
-                                                     <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
-                                                        {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
-                                                     </span>
-                                                  </td>
-                                                );
-                                            }
-
                                             const cellPeriodId = isMerged ? sec.rows[0].id : row.id;
                                             const shiftsInCell = roster.shifts
                                               .filter(s => s.date === dStr && s.period === cellPeriodId)
@@ -585,14 +586,29 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                  return getRankWeight(sA.rank) - getRankWeight(sB.rank);
                                               });
                                             
+                                            let cellBgClass = row.bgClass || sec.bgClass || '';
+                                            if (shiftsInCell.some(s => s.note === 'ANIV')) {
+                                               cellBgClass = 'bg-green-100';
+                                            } else if (isHoliday) {
+                                               cellBgClass = 'bg-red-50/50';
+                                            } else if (isOptional) {
+                                               cellBgClass = 'bg-blue-50/50';
+                                            }
+
                                             return (
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' ? 'align-top' : 'align-middle'} h-auto ${row.bgClass || sec.bgClass || ''}`}
+                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'align-top' : 'align-middle'} h-auto ${cellBgClass}`}
                                               >
-                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-none px-0.5 py-0.5`}>
+                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-none px-0.5 py-0.5`}>
+                                                    {(isHoliday || isOptional) && (
+                                                       <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest ${shiftsInCell.length > 0 ? 'mb-0.5' : ''}`} style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                                          {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
+                                                       </span>
+                                                    )}
                                                     {shiftsInCell.length > 0 ? shiftsInCell.map((shift, i) => {
+                                                       if (shift.isHidden) return null;
                                                        const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                        const legend = shift?.note || '';
                                                        return sdr ? (
@@ -612,7 +628,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                              )}
                                                           </div>
                                                        ) : null;
-                                                    }) : <span className="text-gray-300" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>-</span>}
+                                                    }) : (
+                                                       !(isHoliday || isOptional) && <span className="text-gray-300" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>-</span>
+                                                    )}
                                                  </div>
                                               </td>
                                             );
