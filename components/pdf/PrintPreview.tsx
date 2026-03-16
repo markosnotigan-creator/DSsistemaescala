@@ -1,3 +1,4 @@
+import html2pdf from 'html2pdf.js';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Roster, Rank } from '../../types';
 import { db } from '../../services/store';
@@ -105,15 +106,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     const opt = {
       margin: 0, 
       filename: `Escala_${roster.title.replace(/\s+/g, '_')}.pdf`,
-      image: { type: 'jpeg', quality: 1 },
+      image: { type: 'jpeg' as const, quality: 1 },
       html2canvas: { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const },
       pagebreak: { mode: ['css', 'legacy'] }
     };
 
     try {
-      // @ts-ignore
-      await window.html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(element).save();
     } catch (e) { 
       alert("Erro ao gerar PDF."); 
       console.error(e);

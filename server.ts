@@ -1,8 +1,9 @@
 
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import path from "path";
+import path from "node:path";
 import { fileURLToPath } from "url";
+import fs from "node:fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,20 +12,21 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  const distPath = path.join(process.cwd(), 'dist');
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    console.log(`Starting server in development mode`);
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files from the dist directory in production
-    const distPath = path.join(process.cwd(), 'dist');
+    console.log(`Starting server in production mode`);
     app.use(express.static(distPath));
-    
-    // SPA fallback: serve index.html for all non-file requests
-    app.get('*all', (req, res) => {
+    app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
