@@ -69,7 +69,7 @@ export const PublicRosters: React.FC = () => {
         groups.push({
           categoryId: catId,
           categoryName,
-          rosters: sorted.slice(0, 2)
+          rosters: sorted.slice(0, catId === 'cat_extra' ? 6 : 2)
         });
       }
     });
@@ -211,7 +211,7 @@ export const PublicRosters: React.FC = () => {
                                 </span>
                                 
                                 {/* Selector for rosters */}
-                                <div className="flex gap-2 mb-4">
+                                <div className="flex flex-wrap gap-2 mb-4">
                                   {group.rosters.map(r => (
                                     <button
                                       key={r.id}
