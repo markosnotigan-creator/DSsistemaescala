@@ -1,7 +1,7 @@
 {
   "name": "Escalas DS/PMCE",
   "short_name": "Escalas DS",
-  "start_url": "./index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#102a43",
   "theme_color": "#102a43",
