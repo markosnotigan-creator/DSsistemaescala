@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/store';
 import { Roster } from '../types';
-import { FileText, Calendar, Clock, Eye, Search, ArrowLeft, ShieldAlert, Loader2, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { FileText, Calendar, Clock, Eye, Search, ArrowLeft, ShieldAlert, Loader2, ChevronLeft, ChevronRight, Users, Calculator, X } from 'lucide-react';
 import { PrintPreview } from '../components/pdf/PrintPreview';
 import { ServiceCycleSimulator } from '../components/simulator/ServiceCycleSimulator';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,6 +15,11 @@ export const PublicRosters: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewingRoster, setViewingRoster] = useState<Roster | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
+  const [showCalc, setShowCalc] = useState(false);
+  const [calcStartDate, setCalcStartDate] = useState('');
+  const [calcEndDate, setCalcEndDate] = useState('');
+  const [calcDays, setCalcDays] = useState('');
+  const [calcResult, setCalcResult] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const settings = db.getSettings();
@@ -110,6 +115,14 @@ export const PublicRosters: React.FC = () => {
           </div>
         </div>
         <div className="hidden md:flex items-center space-x-2 bg-pm-50 dark:bg-slate-800 px-4 py-2 rounded-xl border border-pm-100 dark:border-slate-700">
+          <button 
+            onClick={() => setShowCalc(true)}
+            className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-all mr-2"
+          >
+            <Calculator size={18}/>
+            <span className="text-[10px] font-black uppercase">Calculadora</span>
+          </button>
+          <div className="w-px h-4 bg-pm-200 dark:bg-slate-700" />
           <button 
             onClick={() => setShowSimulator(true)}
             className="flex items-center space-x-2 text-pm-700 dark:text-pm-300 hover:text-pm-900 dark:hover:text-white transition-all"
@@ -288,6 +301,163 @@ export const PublicRosters: React.FC = () => {
       {/* Simulator Modal */}
       {showSimulator && (
         <ServiceCycleSimulator onClose={() => setShowSimulator(false)} />
+      )}
+
+      {/* Modal Calculadora */}
+      {showCalc && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-slate-700">
+            <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
+              <h3 className="font-black text-pm-900 dark:text-white flex items-center uppercase tracking-tight">
+                <Calculator size={18} className="mr-2 text-pm-600" />
+                Calculadora entre Períodos
+              </h3>
+              <button onClick={() => setShowCalc(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Data Inicial</label>
+                <input 
+                  type="date" 
+                  className="w-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl p-3 font-bold text-pm-900 dark:text-white outline-none focus:border-pm-500 transition-all"
+                  value={calcStartDate}
+                  onChange={e => setCalcStartDate(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Data Final</label>
+                  <input 
+                    type="date" 
+                    className="w-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl p-3 font-bold text-pm-900 dark:text-white outline-none focus:border-pm-500 transition-all"
+                    value={calcEndDate}
+                    onChange={e => {
+                      setCalcEndDate(e.target.value);
+                      if (e.target.value) setCalcDays('');
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Qtd. Dias</label>
+                  <input 
+                    type="number" 
+                    placeholder="Ex: 40"
+                    className="w-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl p-3 font-bold text-pm-900 dark:text-white outline-none focus:border-pm-500 transition-all"
+                    value={calcDays}
+                    onChange={e => {
+                      setCalcDays(e.target.value);
+                      if (e.target.value) setCalcEndDate('');
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  if (!calcStartDate) {
+                    alert("Por favor, selecione a data inicial.");
+                    return;
+                  }
+                  const start = new Date(calcStartDate + 'T12:00:00');
+                  let end = new Date(start.getTime());
+                  let totalDays = 0;
+                  let returnDate = new Date(start.getTime());
+
+                  if (calcDays && !isNaN(parseInt(calcDays))) {
+                    totalDays = parseInt(calcDays);
+                    end.setDate(start.getDate() + totalDays - 1);
+                    returnDate.setDate(start.getDate() + totalDays);
+                  } else if (calcEndDate) {
+                    end = new Date(calcEndDate + 'T12:00:00');
+                    if (end < start) {
+                      alert("A data final não pode ser anterior à data inicial.");
+                      return;
+                    }
+                    const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                    const utcEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                    totalDays = Math.floor((utcEnd - utcStart) / (1000 * 60 * 60 * 24)) + 1;
+                    returnDate = new Date(end.getTime());
+                    returnDate.setDate(end.getDate() + 1);
+                  } else {
+                    alert("Informe a data final ou a quantidade de dias.");
+                    return;
+                  }
+
+                  let d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                  let d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
+
+                  let totalMonths = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+                  
+                  if (d2.getDate() < d1.getDate()) {
+                      totalMonths -= 1;
+                  }
+
+                  let tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths, d1.getDate());
+                  let expectedMonth = (d1.getMonth() + totalMonths) % 12;
+                  if (expectedMonth < 0) expectedMonth += 12;
+                  
+                  if (tempDate.getMonth() !== expectedMonth) {
+                      tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths + 1, 0);
+                  }
+
+                  const utcTemp = Date.UTC(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+                  const utcD2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+                  let remainingDays = Math.floor((utcD2 - utcTemp) / (1000 * 60 * 60 * 24));
+
+                  let semesters = Math.floor(totalMonths / 6);
+                  let remainingMonths = totalMonths % 6;
+
+                  const exactPeriodDisplay = [];
+                  if (semesters > 0) exactPeriodDisplay.push(`${semesters} semestre${semesters > 1 ? 's' : ''}`);
+                  if (remainingMonths > 0) exactPeriodDisplay.push(`${remainingMonths} ${remainingMonths > 1 ? 'meses' : 'mês'}`);
+                  if (remainingDays > 0) exactPeriodDisplay.push(`${remainingDays} dia${remainingDays > 1 ? 's' : ''}`);
+                  
+                  const periodString = exactPeriodDisplay.length > 0 ? exactPeriodDisplay.join(', ') : '0 dias';
+
+                  setCalcResult({
+                    start,
+                    end,
+                    totalDays,
+                    periodString,
+                    returnDate
+                  });
+                }}
+                className="w-full bg-pm-600 hover:bg-pm-700 text-white font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-pm-500/30 active:scale-95"
+              >
+                Calcular
+              </button>
+
+              {calcResult && (
+                <div className="mt-4 p-4 bg-pm-50 dark:bg-slate-800/80 border border-pm-100 dark:border-slate-700 rounded-xl space-y-3 animate-in fade-in slide-in-from-bottom-2">
+                  <div className="flex justify-between items-center border-b border-pm-200/50 dark:border-slate-600 pb-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Período Completo</span>
+                    <span className="font-black text-pm-900 dark:text-white text-sm">
+                      {calcResult.start.toLocaleDateString('pt-BR')} a {calcResult.end.toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-pm-200/50 dark:border-slate-600 pb-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Total de Dias</span>
+                    <span className="font-black text-pm-900 dark:text-white text-sm">{calcResult.totalDays} dias</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-pm-200/50 dark:border-slate-600 pb-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Tempo Exato</span>
+                    <span className="font-black text-pm-900 dark:text-white text-sm text-right">
+                      {calcResult.periodString}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center bg-green-100 dark:bg-green-900/30 p-2 rounded-lg border border-green-200 dark:border-green-800/50">
+                    <span className="text-xs font-black text-green-800 dark:text-green-400 uppercase">Data de Retorno</span>
+                    <span className="font-black text-green-900 dark:text-green-300 text-lg">
+                      {calcResult.returnDate.toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
