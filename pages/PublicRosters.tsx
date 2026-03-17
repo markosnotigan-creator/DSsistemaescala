@@ -354,86 +354,99 @@ export const PublicRosters: React.FC = () => {
                 </div>
               </div>
 
-              <button 
-                onClick={() => {
-                  if (!calcStartDate) {
-                    alert("Por favor, selecione a data inicial.");
-                    return;
-                  }
-                  const start = new Date(calcStartDate + 'T12:00:00');
-                  let end = new Date(start.getTime());
-                  let totalDays = 0;
-                  let returnDate = new Date(start.getTime());
-
-                  if (calcDays && !isNaN(parseInt(calcDays))) {
-                    totalDays = parseInt(calcDays);
-                    end.setDate(start.getDate() + totalDays - 1);
-                    returnDate.setDate(start.getDate() + totalDays);
-                  } else if (calcEndDate) {
-                    end = new Date(calcEndDate + 'T12:00:00');
-                    if (end < start) {
-                      alert("A data final não pode ser anterior à data inicial.");
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => {
+                    setCalcStartDate('');
+                    setCalcEndDate('');
+                    setCalcDays('');
+                    setCalcResult(null);
+                  }}
+                  className="w-1/3 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 font-black uppercase py-3 rounded-xl transition-all active:scale-95"
+                >
+                  Limpar
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!calcStartDate) {
+                      alert("Por favor, selecione a data inicial.");
                       return;
                     }
-                    const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-                    const utcEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
-                    totalDays = Math.floor((utcEnd - utcStart) / (1000 * 60 * 60 * 24)) + 1;
-                    returnDate = new Date(end.getTime());
-                    returnDate.setDate(end.getDate() + 1);
-                  } else {
-                    alert("Informe a data final ou a quantidade de dias.");
-                    return;
-                  }
+                    const start = new Date(calcStartDate + 'T12:00:00');
+                    let end = new Date(start.getTime());
+                    let totalDays = 0;
+                    let returnDate = new Date(start.getTime());
 
-                  let d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                  let d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
+                    if (calcDays && !isNaN(parseInt(calcDays))) {
+                      totalDays = parseInt(calcDays);
+                      end.setDate(start.getDate() + totalDays - 1);
+                      returnDate.setDate(start.getDate() + totalDays);
+                    } else if (calcEndDate) {
+                      end = new Date(calcEndDate + 'T12:00:00');
+                      if (end < start) {
+                        alert("A data final não pode ser anterior à data inicial.");
+                        return;
+                      }
+                      const utcStart = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+                      const utcEnd = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+                      totalDays = Math.floor((utcEnd - utcStart) / (1000 * 60 * 60 * 24)) + 1;
+                      returnDate = new Date(end.getTime());
+                      returnDate.setDate(end.getDate() + 1);
+                    } else {
+                      alert("Informe a data final ou a quantidade de dias.");
+                      return;
+                    }
 
-                  let totalMonths = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-                  
-                  if (d2.getDate() < d1.getDate()) {
-                      totalMonths -= 1;
-                  }
+                    let d1 = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                    let d2 = new Date(returnDate.getFullYear(), returnDate.getMonth(), returnDate.getDate());
 
-                  let tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths, d1.getDate());
-                  let expectedMonth = (d1.getMonth() + totalMonths) % 12;
-                  if (expectedMonth < 0) expectedMonth += 12;
-                  
-                  if (tempDate.getMonth() !== expectedMonth) {
-                      tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths + 1, 0);
-                  }
+                    let totalMonths = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+                    
+                    if (d2.getDate() < d1.getDate()) {
+                        totalMonths -= 1;
+                    }
 
-                  const utcTemp = Date.UTC(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
-                  const utcD2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
-                  let remainingDays = Math.floor((utcD2 - utcTemp) / (1000 * 60 * 60 * 24));
+                    let tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths, d1.getDate());
+                    let expectedMonth = (d1.getMonth() + totalMonths) % 12;
+                    if (expectedMonth < 0) expectedMonth += 12;
+                    
+                    if (tempDate.getMonth() !== expectedMonth) {
+                        tempDate = new Date(d1.getFullYear(), d1.getMonth() + totalMonths + 1, 0);
+                    }
 
-                  let semesters = Math.floor(totalMonths / 6);
-                  let remainingMonths = totalMonths % 6;
+                    const utcTemp = Date.UTC(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+                    const utcD2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+                    let remainingDays = Math.floor((utcD2 - utcTemp) / (1000 * 60 * 60 * 24));
 
-                  const exactPeriodDisplay = [];
-                  if (semesters > 0) exactPeriodDisplay.push(`${semesters} semestre${semesters > 1 ? 's' : ''}`);
-                  if (remainingMonths > 0) exactPeriodDisplay.push(`${remainingMonths} ${remainingMonths > 1 ? 'meses' : 'mês'}`);
-                  if (remainingDays > 0) exactPeriodDisplay.push(`${remainingDays} dia${remainingDays > 1 ? 's' : ''}`);
-                  
-                  const periodString = exactPeriodDisplay.length > 0 ? exactPeriodDisplay.join(', ') : '0 dias';
+                    let semesters = Math.floor(totalMonths / 6);
+                    let remainingMonths = totalMonths % 6;
 
-                  setCalcResult({
-                    start,
-                    end,
-                    totalDays,
-                    periodString,
-                    returnDate
-                  });
-                }}
-                className="w-full bg-pm-600 hover:bg-pm-700 text-white font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-pm-500/30 active:scale-95"
-              >
-                Calcular
-              </button>
+                    const exactPeriodDisplay = [];
+                    if (semesters > 0) exactPeriodDisplay.push(`${semesters} semestre${semesters > 1 ? 's' : ''}`);
+                    if (remainingMonths > 0) exactPeriodDisplay.push(`${remainingMonths} ${remainingMonths > 1 ? 'meses' : 'mês'}`);
+                    if (remainingDays > 0) exactPeriodDisplay.push(`${remainingDays} dia${remainingDays > 1 ? 's' : ''}`);
+                    
+                    const periodString = exactPeriodDisplay.length > 0 ? exactPeriodDisplay.join(', ') : '0 dias';
+
+                    setCalcResult({
+                      start,
+                      end,
+                      totalDays,
+                      periodString,
+                      returnDate
+                    });
+                  }}
+                  className="w-2/3 bg-pm-600 hover:bg-pm-700 text-white font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-pm-500/30 active:scale-95"
+                >
+                  Calcular
+                </button>
+              </div>
 
               {calcResult && (
                 <div className="mt-4 p-4 bg-pm-50 dark:bg-slate-800/80 border border-pm-100 dark:border-slate-700 rounded-xl space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                  <div className="flex justify-between items-center border-b border-pm-200/50 dark:border-slate-600 pb-2">
-                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Período Completo</span>
-                    <span className="font-black text-pm-900 dark:text-white text-sm">
+                  <div className="flex justify-between items-center border-b border-red-200/50 dark:border-red-900/50 pb-2">
+                    <span className="text-xs font-bold text-red-500 dark:text-red-400 uppercase">Período Completo</span>
+                    <span className="font-black text-red-600 dark:text-red-400 text-sm">
                       {calcResult.start.toLocaleDateString('pt-BR')} a {calcResult.end.toLocaleDateString('pt-BR')}
                     </span>
                   </div>
