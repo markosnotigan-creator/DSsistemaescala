@@ -74,7 +74,7 @@ export const PublicRosters: React.FC = () => {
         groups.push({
           categoryId: catId,
           categoryName,
-          rosters: sorted.slice(0, catId === 'cat_extra' ? 6 : 2)
+          rosters: catId === 'cat_extra' ? sorted : sorted.slice(0, 2)
         });
       }
     });
@@ -209,7 +209,7 @@ export const PublicRosters: React.FC = () => {
                           }}
                           transition={{ duration: 0.4 }}
                         >
-                          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-2xl border border-gray-100 dark:border-slate-800 flex flex-col h-[420px] relative overflow-hidden group">
+                          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-2xl border border-gray-100 dark:border-slate-800 flex flex-col min-h-[420px] relative overflow-hidden group">
                             {/* Background Pattern */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-pm-500/5 rounded-bl-full -mr-8 -mt-8 transition-all group-hover:scale-110" />
                             
@@ -225,15 +225,45 @@ export const PublicRosters: React.FC = () => {
                                 
                                 {/* Selector for rosters */}
                                 <div className="flex flex-wrap gap-2 mb-4">
-                                  {group.rosters.map(r => (
-                                    <button
-                                      key={r.id}
-                                      onClick={() => setSelectedRosterIds(prev => ({ ...prev, [group.categoryId]: r.id }))}
-                                      className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${selectedRosterId === r.id ? 'bg-pm-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400'}`}
-                                    >
-                                      {new Date(r.startDate).toLocaleDateString()}
-                                    </button>
-                                  ))}
+                                  {group.categoryId === 'cat_extra' ? (
+                                    <div className="w-full flex flex-col gap-2">
+                                      <input 
+                                        type="date"
+                                        className="w-full border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-xl p-2 font-bold text-pm-900 dark:text-white outline-none focus:border-pm-500 transition-all text-sm"
+                                        value={selectedRoster ? selectedRoster.startDate : ''}
+                                        onChange={(e) => {
+                                          const selectedDate = e.target.value;
+                                          const foundRoster = group.rosters.find(r => r.startDate === selectedDate);
+                                          if (foundRoster) {
+                                            setSelectedRosterIds(prev => ({ ...prev, [group.categoryId]: foundRoster.id }));
+                                          } else {
+                                            alert("Nenhuma escala encontrada para esta data.");
+                                          }
+                                        }}
+                                      />
+                                      <div className="flex flex-wrap gap-2">
+                                        {group.rosters.slice(0, 6).map(r => (
+                                          <button
+                                            key={r.id}
+                                            onClick={() => setSelectedRosterIds(prev => ({ ...prev, [group.categoryId]: r.id }))}
+                                            className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${selectedRosterId === r.id ? 'bg-pm-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400'}`}
+                                          >
+                                            {new Date(r.startDate).toLocaleDateString()}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    group.rosters.map(r => (
+                                      <button
+                                        key={r.id}
+                                        onClick={() => setSelectedRosterIds(prev => ({ ...prev, [group.categoryId]: r.id }))}
+                                        className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${selectedRosterId === r.id ? 'bg-pm-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400'}`}
+                                      >
+                                        {new Date(r.startDate).toLocaleDateString()}
+                                      </button>
+                                    ))
+                                  )}
                                 </div>
 
                                 <h4 className="text-2xl font-black text-pm-900 dark:text-white uppercase leading-tight line-clamp-2">
@@ -244,7 +274,7 @@ export const PublicRosters: React.FC = () => {
                               <div className="space-y-3 pt-2">
                                 <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm font-bold">
                                   <Calendar size={18} className="mr-3 text-pm-500" />
-                                  <span>{selectedRoster ? `${new Date(selectedRoster.startDate).toLocaleDateString()} a ${new Date(selectedRoster.endDate).toLocaleDateString()}` : ''}</span>
+                                  <span>{selectedRoster ? (group.categoryId === 'cat_extra' ? new Date(selectedRoster.startDate).toLocaleDateString() : `${new Date(selectedRoster.startDate).toLocaleDateString()} a ${new Date(selectedRoster.endDate).toLocaleDateString()}`) : ''}</span>
                                 </div>
                                 <div className="flex items-center text-gray-400 dark:text-gray-500 text-xs font-medium">
                                   <Clock size={16} className="mr-3" />
@@ -255,7 +285,7 @@ export const PublicRosters: React.FC = () => {
 
                             <button 
                               onClick={() => selectedRoster && setViewingRoster(selectedRoster)}
-                              className="w-full bg-pm-700 hover:bg-pm-800 text-white py-4 rounded-2xl transition-all flex items-center justify-center font-black text-sm uppercase shadow-lg shadow-pm-500/20 active:scale-95 group-hover:translate-y-[-4px]"
+                              className="w-full bg-pm-700 hover:bg-pm-800 text-white py-4 rounded-2xl transition-all flex items-center justify-center font-black text-sm uppercase shadow-lg shadow-pm-500/20 active:scale-95 group-hover:translate-y-[-4px] mt-6 shrink-0"
                             >
                               <Eye size={20} className="mr-2"/> <span>Visualizar Escala</span>
                             </button>
