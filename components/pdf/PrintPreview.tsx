@@ -336,7 +336,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                     </div>
 
                     <div className="mb-2 text-left flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
-                        <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span style={textTransformStyle}>{roster.observations}</span>
+                        <span className="font-bold uppercase">APRESENTAÇÃO:</span> <span className="leading-normal" style={textTransformStyle}>{roster.observations}</span>
                     </div>
                     <div className="flex-1 relative">
                         <table className="w-full border-collapse border border-black table-auto" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
@@ -351,7 +351,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                               {extraRosterData.map((item, index) => (
                                 <tr key={`${item.soldier.id}-${index}`}>
                                   {HEADERS.map((header, colIndex) => (
-                                    <td key={colIndex} className="border border-black p-0.5 text-center">
+                                    <td key={colIndex} className="border border-black p-1 text-center">
                                       {header.includes('ORD') ? (
                                         <span className="font-bold">{(index + 1).toString().padStart(2, '0')}</span>
                                       ) : (
@@ -367,9 +367,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                     <div className="text-right mb-4 mt-2 font-bold flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.city}, {creationDateFormatted}</div>
                     <div className="text-center mb-2 flex-shrink-0">
                          <div className="w-1/3 mx-auto border-b border-black mb-1"></div>
-                         <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
-                         <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
-                         <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
+                         <p className="font-bold uppercase leading-normal" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                         <p className="uppercase leading-normal mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
+                         <p className="uppercase leading-normal mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                     </div>
                 </div>
             </div>
@@ -414,7 +414,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        <tbody>
                           {(roster.sections || []).flatMap(sec => sec.rows.map(row => ({ row, sec }))).map(({ row, sec }) => (
                              <tr key={row.id}>
-                                 <td className={`border border-black ${row.bgClass || sec.bgClass || 'bg-[#cbd5b0]'} p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-tight`} style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
+                                 <td className={`border border-black ${row.bgClass || sec.bgClass || 'bg-[#cbd5b0]'} p-1 font-bold uppercase text-center align-middle whitespace-pre-wrap leading-normal`} style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                                    {row.label}
                                 </td>
                                 {dates.map(d => {
@@ -457,7 +457,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                // IMPRESSÃO GRADE (ADM/AST/CUSTOM): Só mostra a nota preenchida na lacuna
                                                const legend = shift.note || '';
                                                return sdr ? (
-                                                  <div key={i} className="font-bold leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
+                                                  <div key={i} className="font-bold leading-normal" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
                                                      <div>{getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort} {legend && (
                                                         <span className={`ml-0.5 font-black ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : 'text-blue-800'}`}>
                                                           {legend.trim().toUpperCase().startsWith('ANIV') 
@@ -466,7 +466,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                         </span>
                                                       )}</div>
                                                      {!row.hidePhone && !roster.hidePhone && sdr.phone && (
-                                                        <div className="text-gray-600 font-bold leading-none mt-0.5" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone}</div>
+                                                        <div className="text-gray-600 font-bold leading-normal mt-0.5" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone}</div>
                                                      )}
                                                   </div>
                                                ) : null;
@@ -482,23 +482,23 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        </tbody>
                     </table>
                   </div>
-                  <div className="mt-2 relative flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
-                     <div className="flex w-full mb-1 border border-black p-1 bg-white">
-                         <div className="w-1/2 pr-1 border-r border-black">
-                             <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>OBSERVAÇÕES:</span> 
-                             <div className="leading-tight">{roster.observations}</div>
+                  <div className="mt-4 relative flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
+                     <div className="flex w-full mb-2 border border-black p-2 bg-white">
+                         <div className="w-1/2 pr-2 border-r border-black">
+                             <div className="font-bold uppercase block mb-1" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>OBSERVAÇÕES:</div> 
+                             <div className="leading-normal">{roster.observations}</div>
                          </div>
-                         <div className="w-1/2 pl-1">
-                             <span className="font-bold uppercase block mb-0.5" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>ALTERAÇÕES:</span>
-                             <div className="leading-tight">{roster.situationText || 'Sem alterações.'}</div>
+                         <div className="w-1/2 pl-2">
+                             <div className="font-bold uppercase block mb-1" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>ALTERAÇÕES:</div>
+                             <div className="leading-normal">{roster.situationText || 'Sem alterações.'}</div>
                          </div>
                      </div>
                      <div className="text-right font-bold mt-1">{settings.city}, {creationDateFormatted}</div>
                      <div className="text-center w-1/3 mx-auto mt-2">
                         <div className="w-full border-b border-black mb-0.5"></div>
-                        <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
-                        <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
-                        <p className="uppercase leading-none mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
+                        <p className="font-bold uppercase leading-normal" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                        <p className="uppercase leading-normal mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
+                        <p className="uppercase leading-normal mt-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                      </div>
                   </div>
                </div>
@@ -513,7 +513,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             {cleanHeaderTitle || settings.orgName || settings.institutionName}
                          </h1>
                          <h2 className="font-black uppercase leading-none mb-0.5" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{roster.title}</h2>
-                         <div className="font-bold uppercase text-black leading-tight" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
+                         <div className="font-bold uppercase text-black leading-normal" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
                              PERÍODO: {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
                        </div>
@@ -539,9 +539,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                   if (isOptional) bgClass = 'bg-blue-100';
 
                                   return (
-                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-0 text-center`} style={{ width: `${100 / dates.length}%` }}>
-                                        <div className="font-black uppercase leading-none" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
-                                        <div className="font-bold leading-none mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-1 text-center`} style={{ width: `${100 / dates.length}%` }}>
+                                        <div className="font-black uppercase leading-normal" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
+                                        <div className="font-bold leading-normal mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                         {isHoliday && (
                                            <div className="mt-0.5 bg-red-600 text-white font-black py-0.5 px-0.5 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FERIADO
@@ -560,8 +560,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                           <tbody>
                              {(roster.sections || []).map((sec, sIdx) => (
                                 <React.Fragment key={sIdx}>
-                                   <tr className={`h-3.5 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
-                                      <td colSpan={dates.length} className="border border-black p-0 text-center font-bold uppercase tracking-wide leading-none align-middle" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
+                                   <tr className={`h-6 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
+                                      <td colSpan={dates.length} className="border border-black p-1 text-center font-bold uppercase tracking-wide leading-normal align-middle" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                                          {sec.title}
                                       </td>
                                    </tr>
@@ -599,9 +599,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className={`border border-black p-0 text-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'align-top' : 'align-middle'} h-auto ${cellBgClass}`}
+                                                className={`border border-black p-1 text-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'align-top' : 'align-middle'} h-auto ${cellBgClass}`}
                                               >
-                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-none px-0.5 py-0.5`}>
+                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-normal px-0.5 py-0.5`}>
                                                     {(isHoliday || isOptional) && (
                                                        <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest ${shiftsInCell.length > 0 ? 'mb-0.5' : ''}`} style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                                           {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
@@ -612,15 +612,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                        const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                        const legend = shift?.note || '';
                                                        return sdr ? (
-                                                          <div key={i} className="flex flex-col items-center justify-center w-full leading-none mb-0.5 last:mb-0">
-                                                             <div className="font-bold text-center w-full break-words tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
+                                                          <div key={i} className="flex flex-col items-center justify-center w-full leading-normal mb-0.5 last:mb-0">
+                                                             <div className="font-bold text-center w-full break-words tracking-tight leading-normal" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
                                                                 {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name}
                                                              </div>
                                                              {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
-                                                                <div className="text-gray-600 font-bold mt-0.5 leading-tight" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
+                                                                <div className="text-gray-600 font-bold mt-0.5 leading-normal" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
                                                              )}
                                                              {legend && (
-                                                                <div className={`font-black mt-0.5 scale-90 leading-tight ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : 'text-blue-800'}`} style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>
+                                                                <div className={`font-black mt-0.5 scale-90 leading-normal ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : 'text-blue-800'}`} style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>
                                                                    {legend.trim().toUpperCase().startsWith('ANIV') 
                                                                      ? `ANIV (${(sdr.birthday ? new Date(sdr.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00')).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`
                                                                      : legend}
@@ -642,18 +642,18 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                           </tbody>
                        </table>
                     </div>
-                    <div className="mt-0.5 flex flex-col justify-end h-auto flex-shrink-0">
-                         <div className="flex w-full mb-0.5 border-b border-black/10 pb-0.5">
-                             <div className="w-1/2 pr-1 border-r border-black/10">
-                                 <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
-                                    <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{roster.observationsTitle || 'OBS'}:</span> 
-                                    <span style={textTransformStyle}>{roster.observations}</span>
+                    <div className="mt-2 flex flex-col justify-end h-auto flex-shrink-0">
+                         <div className="flex w-full mb-2 border-b border-black/20 pb-2">
+                             <div className="w-1/2 pr-2 border-r border-black/10">
+                                 <div className="leading-normal" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                    <div className="font-bold uppercase block text-gray-500 mb-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{roster.observationsTitle || 'OBS'}:</div> 
+                                    <div style={textTransformStyle}>{roster.observations}</div>
                                  </div>
                              </div>
                              <div className="w-1/2 pl-1">
-                                 <div className="leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
-                                    <span className="font-bold uppercase block text-gray-500 mb-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>ALTERAÇÕES:</span>
-                                    <span style={textTransformStyle}>{roster.situationText || 'Sem alterações.'}</span>
+                                 <div className="leading-normal" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                                    <div className="font-bold uppercase block text-gray-500 mb-1" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>ALTERAÇÕES:</div>
+                                    <div style={textTransformStyle}>{roster.situationText || 'Sem alterações.'}</div>
                                  </div>
                              </div>
                          </div>
@@ -663,9 +663,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                             </div>
                             <div className="text-center w-1/3 mx-auto mt-1">
                                 <div className="w-full border-b border-black mb-0.5"></div>
-                                <p className="font-bold uppercase leading-none" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
-                                <p className="uppercase leading-none mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorRole}</p>
-                                <p className="uppercase leading-none mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorMatricula}</p> 
+                                <p className="font-bold uppercase leading-normal" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
+                                <p className="uppercase leading-normal mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorRole}</p>
+                                <p className="uppercase leading-normal mt-0.5" style={{ fontSize: getPrintFontSize('name', appearance.fontSize) }}>{settings.directorMatricula}</p> 
                             </div>
                         </div>
                     </div>
