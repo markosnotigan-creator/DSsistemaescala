@@ -187,9 +187,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
         displayName = <strong className="font-black">{s.name}</strong>;
       }
 
-      return <span className="text-center block" style={textStyle}>{displayName}</span>;
+      return <span className="text-center block" style={textStyle}>{displayName} {s.roleShort}</span>;
     }
-    if (h.includes('NOME')) return <div className="text-center truncate font-black" style={textStyle}>{s.name}</div>;
+    if (h.includes('NOME')) return <div className="text-center truncate font-black" style={textStyle}>{s.name} {s.roleShort}</div>;
     if (h === 'NUMERO' || h.includes('NUMERO') || h.includes('NUMERAL')) return s.matricula || '-';
     if (h.includes('MATRICULA') || h.includes('MATRÍCULA') || h === 'MF' || h === 'M.F' || h.includes('FUNCIONAL')) return s.mf || '-';
     if (h === 'PIS' || h.includes('PIS')) return s.pis || '-';
@@ -614,7 +614,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                        return sdr ? (
                                                           <div key={i} className="flex flex-col items-center justify-center w-full leading-normal mb-0.5 last:mb-0">
                                                              <div className="font-bold text-center w-full break-words tracking-tight leading-normal" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
-                                                                {getAbbreviatedRank(sdr.rank)} {sdr.matricula || ''} {sdr.name}
+                                                                {getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort}
                                                              </div>
                                                              {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
                                                                 <div className="text-gray-600 font-bold mt-0.5 leading-normal" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
