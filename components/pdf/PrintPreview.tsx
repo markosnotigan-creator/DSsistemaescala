@@ -25,7 +25,6 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   const isGrid = !isExtra && !isAmbOrPsi;
   
   // PADRÃO: PAISAGEM (LANDSCAPE) PARA TODAS AS ESCALAS
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
 
   const cleanHeaderTitle = (roster.headerTitle || settings.orgName || settings.institutionName || '').replace(/\s*\(TESTE CONEXÃO[^)]+\)/g, '');
 
@@ -55,18 +54,14 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
   // Ajuste automático ao abrir
   useEffect(() => {
     handleFitToScreen();
-  }, [orientation]);
+  }, []);
 
   const handleFitToScreen = () => {
     const screenHeight = window.innerHeight;
-    // Altura base A4 Landscape (794px a 96dpi) vs Portrait (1123px)
-    const contentHeight = orientation === 'portrait' ? 1123 : 794; 
+    // Altura base A4 Landscape (794px a 96dpi)
+    const contentHeight = 794; 
     const fitZoom = (screenHeight - 140) / contentHeight; 
     setZoomLevel(Math.max(0.4, Math.min(fitZoom, 1.2)));
-  };
-
-  const toggleOrientation = () => {
-    setOrientation(prev => prev === 'portrait' ? 'landscape' : 'portrait');
   };
 
   // Processamento de dados para Escala Extra (Lista Plana, sem agrupar por Quadro)
@@ -101,15 +96,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
     element.style.transform = 'none';
     element.style.margin = '0';
     element.style.width = '297mm'; // Force A4 Landscape width
-    element.style.minHeight = '210mm'; // Ensure at least A4 Landscape height
+    element.style.height = '205mm'; // Ensure A4 Landscape height
 
     const opt = {
       margin: 0, 
       filename: `Escala_${roster.title.replace(/\s+/g, '_')}.pdf`,
       image: { type: 'jpeg' as const, quality: 1 },
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
+      html2canvas: { scale: 1.5, useCORS: true, scrollY: 0, letterRendering: true },
       jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const },
-      pagebreak: { mode: ['css', 'legacy'] }
+      pagebreak: { mode: 'avoid' }
     };
 
     try {
@@ -240,25 +235,21 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
           }
           html, body { 
             width: 297mm;
-            height: auto !important;
-            min-height: 210mm;
+            height: 210mm;
             margin: 0 !important; 
             padding: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
             background: white !important; 
           }
           #roster-pdf-content { 
-            width: 100% !important; 
-            height: auto !important;
-            min-height: 100% !important;
+            width: 297mm !important; 
+            height: 205mm !important;
+            overflow: hidden !important;
             box-shadow: none !important; 
             margin: 0 !important;
-            padding: 5mm !important;
-            transform: scale(0.98) !important;
-            transform-origin: top center !important;
-            overflow: visible !important;
+            padding: 2mm !important;
             display: flex !important;
             flex-direction: column !important;
           }
@@ -374,20 +365,20 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                 </div>
             </div>
           ) : isGrid ? (
-            <div id="roster-pdf-content" className="w-[297mm] min-h-[210mm] bg-white" style={{ padding: '5mm 6mm', fontFamily: appearance.fontFamily, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
-               <div className="flex flex-col min-h-full">
-                  <header className="text-center mb-1 flex flex-col justify-center border-b border-black/20 pb-0.5 relative h-16 flex-shrink-0">
-                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-16 w-16 object-contain" alt="Logo Esq" />}
-                     <div className="mx-20">
+            <div id="roster-pdf-content" className="w-[297mm] h-[205mm] bg-white overflow-hidden" style={{ padding: '2mm', fontFamily: appearance.fontFamily, backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+               <div className="flex flex-col h-full overflow-hidden">
+                  <header className="text-center mb-1 flex flex-col justify-center border-b border-black/20 pb-0.5 relative h-14 flex-shrink-0">
+                     {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-0 h-12 w-12 object-contain" alt="Logo Esq" />}
+                     <div className="mx-16">
                        <h1 className="font-bold uppercase tracking-wide text-gray-800" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
                          {cleanHeaderTitle || settings.orgName}
                        </h1>
                        <h2 className="font-black uppercase tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('subtitle', appearance.fontSize) }}>{roster.title}</h2>
                        <div className="font-bold uppercase" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>DO DIA {new Date(roster.startDate + 'T12:00:00').toLocaleDateString('pt-BR')} A {new Date(roster.endDate + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
                      </div>
-                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-16 w-16 object-contain" alt="Logo Dir" />}
+                     {settings.showLogoRight && settings.logoRight && <img src={settings.logoRight} crossOrigin="anonymous" className="absolute right-0 top-0 h-12 w-12 object-contain" alt="Logo Dir" />}
                   </header>
-                  <div className="flex-1 border border-black relative flex flex-col">
+                  <div className="flex-1 border border-black relative flex flex-col overflow-hidden">
                     <table className="w-full h-full border-collapse table-fixed" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                        <thead>
                           <tr className="h-7">
@@ -482,8 +473,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                        </tbody>
                     </table>
                   </div>
-                  <div className="mt-4 relative flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
-                     <div className="flex w-full mb-2 border border-black p-2 bg-white">
+                  <div className="mt-0 relative flex-shrink-0" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>
+                     <div className="flex w-full mb-2 border border-black p-1 bg-white">
                          <div className="w-1/2 pr-2 border-r border-black">
                              <div className="font-bold uppercase block mb-1" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>OBSERVAÇÕES:</div> 
                              <div className="leading-normal">{roster.observations}</div>
