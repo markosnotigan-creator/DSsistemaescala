@@ -292,7 +292,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                            <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-1/2 -translate-y-1/2 h-16 w-16 object-contain" alt="Logo Esq" />
                        )}
                        
-                       <div className="flex flex-col items-center justify-center w-full px-24 text-center">
+                       <div className="flex flex-col items-center justify-center w-full px-28 text-center">
                          <div
                             contentEditable
                             suppressContentEditableWarning
@@ -372,7 +372,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                <div className="flex flex-col h-full overflow-hidden">
                   <header className="text-center mb-1 flex flex-col justify-center border-b-2 border-black pb-1 relative h-16 flex-shrink-0">
                      {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-1 h-14 w-14 object-contain" alt="Logo Esq" />}
-                     <div className="mx-20">
+                     <div className="mx-24">
                        <h1 className="font-bold uppercase tracking-wide text-black" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
                          {cleanHeaderTitle || settings.orgName}
                        </h1>
@@ -489,7 +489,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                      </div>
                      <div className="text-right font-bold mt-1">{settings.city}, {creationDateFormatted}</div>
                      <div className="text-center w-1/3 mx-auto mt-1">
-                        <div className="w-full border-b-2 border-black mb-0.5"></div>
+                        <div className="w-full border-b-2 border-black mb-1"></div>
                         <p className="font-bold uppercase leading-tight" style={{ fontSize: getPrintFontSize('meta', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
                         <p className="uppercase leading-tight mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
                         <p className="uppercase leading-tight mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorMatricula}</p> 
@@ -502,7 +502,7 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                 <div className="flex flex-col h-full overflow-hidden p-2">
                     <header className="text-center mb-1 relative min-h-12 flex flex-col items-center justify-center flex-shrink-0 border-b-2 border-black pb-1">
                        {settings.showLogoLeft && settings.logoLeft && <img src={settings.logoLeft} crossOrigin="anonymous" className="absolute left-0 top-1 h-12 w-12 object-contain" alt="Logo Esq" />}
-                       <div className="mx-16 w-full">
+                       <div className="mx-24 w-full">
                          <h1 className="font-bold uppercase tracking-tight leading-none mb-0.5 text-black" style={{ fontSize: getPrintFontSize('title', appearance.fontSize) }}>
                             {cleanHeaderTitle || settings.orgName || settings.institutionName}
                          </h1>
@@ -519,9 +519,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                         </div>
                     )}
                     <div className="border-2 border-black relative flex flex-col px-1 flex-1 overflow-hidden">
-                       <table className="w-full h-full table-fixed border-collapse" style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
+                       <table className={`w-full ${roster.type === 'cat_ast' ? 'h-auto' : 'h-full'} table-fixed border-collapse`} style={{ fontSize: getPrintFontSize('cell', appearance.fontSize) }}>
                           <thead>
-                            <tr className="h-6">
+                            <tr className={roster.type === 'cat_ast' ? 'h-auto' : 'h-6'}>
                                {dates.map((d) => {
                                   const dStr = d.toISOString().split('T')[0];
                                   const isAmbulancia = roster.type === 'cat_amb';
@@ -533,9 +533,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                   if (isOptional) bgClass = 'bg-blue-100';
 
                                   return (
-                                     <th key={d.toISOString()} className={`${bgClass} border border-black p-1 text-center`} style={{ width: `${100 / dates.length}%` }}>
-                                        <div className="font-black uppercase leading-tight" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
-                                        <div className="font-bold leading-tight mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
+                                     <th key={d.toISOString()} className={`${bgClass} border border-black ${roster.type === 'cat_ast' ? 'p-1.5' : 'p-1'} text-center`} style={{ width: `${100 / dates.length}%` }}>
+                                        <div className={`font-black uppercase ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'}`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>{['DOM','SEG','TER','QUA','QUI','SEX','SAB'][d.getDay()]}</div>
+                                        <div className={`font-bold ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'} mt-0.5`} style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{d.getDate().toString().padStart(2,'0')}/{String(d.getMonth()+1).padStart(2,'0')}</div>
                                         {isHoliday && (
                                            <div className="mt-0.5 bg-red-600 text-white font-black py-0.5 px-0.5 rounded shadow-sm leading-none" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                               FERIADO
@@ -554,8 +554,8 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                           <tbody>
                              {(roster.sections || []).map((sec, sIdx) => (
                                 <React.Fragment key={sIdx}>
-                                   <tr className={`h-7 ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
-                                      <td colSpan={dates.length} className="border border-black p-1 text-center font-bold uppercase tracking-wide leading-tight align-middle" style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
+                                   <tr className={`${roster.type === 'cat_ast' ? 'h-auto' : 'h-7'} ${sec.bgClass || 'bg-[#cbd5b0]'}`}>
+                                      <td colSpan={dates.length} className={`border border-black ${roster.type === 'cat_ast' ? 'p-1.5' : 'p-1'} text-center font-bold uppercase tracking-wide ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'} align-middle`} style={{ fontSize: getPrintFontSize('header', appearance.fontSize) }}>
                                          {sec.title}
                                       </td>
                                    </tr>
@@ -593,9 +593,9 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                               <td 
                                                 key={`${row.id}-${dStr}`} 
                                                 rowSpan={isMerged ? sec.rows.length : 1}
-                                                className={`border border-black p-1 text-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'align-top' : 'align-middle'} h-auto ${cellBgClass}`}
+                                                className={`border border-black ${roster.type === 'cat_ast' ? 'p-1.5' : 'p-1'} text-center ${(roster.type === 'cat_odo' || roster.type === 'cat_ast') ? 'align-top' : 'align-middle'} h-auto ${cellBgClass}`}
                                               >
-                                                 <div className={`flex flex-col items-center ${roster.type === 'cat_odo' && shiftsInCell.length > 0 ? 'justify-start pt-0.5' : 'justify-center'} w-full h-full leading-tight px-0.5 py-0.5`}>
+                                                 <div className={`flex flex-col items-center ${(roster.type === 'cat_odo' || roster.type === 'cat_ast') ? 'justify-start pt-0.5' : 'justify-center'} w-full ${roster.type === 'cat_ast' ? 'h-auto' : 'h-full'} ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'} px-0.5 ${roster.type === 'cat_ast' ? 'py-1' : 'py-0.5'}`}>
                                                     {(isHoliday || isOptional) && (
                                                        <span className={`font-black ${isHoliday ? 'text-red-600' : 'text-blue-600'} block tracking-widest ${shiftsInCell.length > 0 ? 'mb-0.5' : ''}`} style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                                           {isHoliday ? 'FERIADO' : 'FACULTATIVO'}
@@ -606,15 +606,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                                        const sdr = allSoldiers.find(s => s.id === shift.soldierId);
                                                        const legend = shift?.note || '';
                                                        return sdr ? (
-                                                          <div key={i} className="flex flex-col items-center justify-center w-full leading-tight mb-0.5 last:mb-0">
-                                                             <div className="font-bold text-center w-full break-words tracking-tight leading-tight" style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
+                                                          <div key={i} className={`flex flex-col items-center justify-center w-full ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'} ${roster.type === 'cat_ast' ? 'mb-1' : 'mb-0.5'} last:mb-0`}>
+                                                             <div className={`font-bold text-center w-full break-words tracking-tight ${roster.type === 'cat_ast' ? 'leading-snug' : 'leading-tight'}`} style={{ fontSize: getPrintFontSize('name', appearance.fontSize), ...textTransformStyle }}>
                                                                 {getAbbreviatedRank(sdr.rank)} {sdr.matricula ? sdr.matricula + ' ' : ''}{sdr.name} {sdr.roleShort}
                                                              </div>
                                                              {!roster.hidePhone && (settings.showPhoneInPrint || sdr.phone) && sdr.phone && (
-                                                                <div className="text-gray-600 font-bold mt-0.5 leading-tight" style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
+                                                                <div className={`text-gray-600 font-bold ${roster.type === 'cat_ast' ? 'mt-0 leading-snug' : 'mt-0.5 leading-tight'}`} style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>{sdr.phone || '-'}</div>
                                                              )}
                                                              {legend && (
-                                                                <div className={`font-black mt-0.5 scale-90 leading-tight ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : 'text-blue-800'}`} style={{ fontSize: getPrintFontSize('phone', appearance.fontSize) }}>
+                                                                <div className={`font-black ${roster.type === 'cat_ast' ? 'mt-0 leading-snug' : 'mt-0.5 leading-tight'} ${legend.trim().toUpperCase().startsWith('ANIV') ? 'text-green-800' : 'text-blue-800'}`} style={{ fontSize: `calc(${getPrintFontSize('phone', appearance.fontSize)} * 0.9)` }}>
                                                                    {legend.trim().toUpperCase().startsWith('ANIV') 
                                                                      ? `ANIV (${(sdr.birthday ? new Date(sdr.birthday + 'T12:00:00') : new Date(shift.date + 'T12:00:00')).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`
                                                                      : legend}
@@ -651,15 +651,15 @@ export const PrintPreview: React.FC<PrintPreviewProps> = ({ roster, onClose }) =
                                  </div>
                              </div>
                          </div>
-                        <div className="relative mt-1">
-                            <div className="absolute right-0 top-0 font-bold" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
+                        <div className="mt-1">
+                            <div className="text-right font-bold" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>
                                 {settings.city}, {creationDateFormatted}
                             </div>
                             <div className="text-center w-1/3 mx-auto mt-1 pb-1">
-                                <div className="w-full border-b-2 border-black mb-0.5"></div>
+                                <div className="w-full border-b-2 border-black mb-1"></div>
                                 <p className="font-bold uppercase leading-tight" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorName} – {settings.directorRank}</p>
-                                <p className="uppercase leading-tight mt-0" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
-                                <p className="uppercase leading-tight mt-0" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>Matr.: {settings.directorMatricula}</p> 
+                                <p className="uppercase leading-tight mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>{settings.directorRole}</p>
+                                <p className="uppercase leading-tight mt-0.5" style={{ fontSize: getPrintFontSize('tiny', appearance.fontSize) }}>Matr.: {settings.directorMatricula}</p> 
                             </div>
                         </div>
                     </div>
